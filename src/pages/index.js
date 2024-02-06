@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import useSWR, { useSWRConfig }  from 'swr'
 import PuzzleBoard from "@/components/Chessboard";
 import { useState, useEffect } from "react";
-import { Flex, Badge, Box, LoadingOverlay, Card, Title, Text, Tabs, Table, NavLink, Modal, TextInput, PasswordInput, Button, Menu } from '@mantine/core';
+import { Flex, Badge, Box, LoadingOverlay, Card, Title, Text, Tabs, Table, NavLink, Modal, TextInput, Image, PasswordInput, Button, Menu } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { formatDate, getBeginningOfWeek, getEndOfWeek, getMonthDate } from "@/utils/dateHelper";
 
@@ -19,6 +19,32 @@ function transformURL(url) {
 
   return url;
 }
+
+const HeadlineCard = ({ user, logout, results, puzzleIndex, open }) => <Card withBorder shadow="sm">
+<Flex justify="space-between" align="center" mb="sm">
+  <Title order={1} size="h3">Happy Sunday Puzzler</Title>
+  { user && user.name
+    ? <Menu shadow="md" width={200}>
+        <Menu.Target>
+          <NavLink component="button" label={user.name} w="auto" active variant="subtle" />
+        </Menu.Target>
+        <Menu.Dropdown>
+          <Menu.Item onClick={logout}>
+            Logout
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+    : <NavLink component="button" label="Anmelden" w="auto" active variant="subtle" onClick={open} />
+  }
+</Flex>
+<Flex gap={{ base: 'xs' }} wrap="wrap">
+  <ResultChip result={results[0]} active={puzzleIndex === 0}>&gt; 1200</ResultChip>
+  <ResultChip result={results[1]} active={puzzleIndex === 1}>&gt; 1400</ResultChip>
+  <ResultChip result={results[2]} active={puzzleIndex === 2}>&gt; 1600</ResultChip>
+  <ResultChip result={results[3]} active={puzzleIndex === 3}>&gt; 1800</ResultChip>
+  <ResultChip result={results[4]} active={puzzleIndex === 4}>&gt; 2000</ResultChip>
+</Flex>
+</Card>
 
 const ResultChip = ({ children, result, active }) => <Badge
     checked={result !== undefined}
@@ -38,6 +64,7 @@ export default function Home() {
   const [isInit, setIsInit] = useState(false)
   const [error, setError] = useState('')
   const [userLoading, setUserLoading] = useState(false)
+  const [pwaModalOpen, setPwaModalOpen] = useState(false)
   const { data: puzzleData, isLoading: isPuzzleLoading } = useSWR('/api/puzzles', fetcher)
   const { data: user, isLoading: isUserLoading } = useSWR('/api/users', fetcher)
   const { data: tableData, isLoading: isTableLoading } = useSWR(`/api/leaderboards?q=${activeTab}`, fetcher)
@@ -57,10 +84,6 @@ export default function Home() {
       setIsInit(true)
     }
   }, [isLoading, puzzles, user, isInit])
-
-  // todo pwa install info modal
-  // https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Trigger_install_prompt
-  // https://web.dev/learn/pwa/installation-prompt/
 
   const fen = isLoading ? "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" : puzzles[puzzleIndex].FEN
   const moves = isLoading ? "" : puzzles[puzzleIndex].Moves
@@ -108,6 +131,7 @@ export default function Home() {
         refetchLeaderboards()
         setError('')
         close()
+        setPwaModalOpen(true)
       } else {
         setError(res.msg)
       }
@@ -167,8 +191,11 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main>
+      <main style={{ paddingBottom: '2em' }}>
         <Flex align={{ base: "center", md: "flex-start" }} justify="center" mt="lg" p="md" direction={{ base: "column", md: "row" }} gap="xl">
+          <Box display={{ base: 'block', md: 'none' }} w="100%" maw={450}>
+            <HeadlineCard {...{ user, logout, results, puzzleIndex, open }} />
+          </Box>
           <Box pos="relative" w="100%" maw={450}>
             <LoadingOverlay visible={isLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
             <PuzzleBoard
@@ -185,31 +212,9 @@ export default function Home() {
             />
           </Box>
           <Box w="100%" maw={450}>
-            <Card withBorder shadow="sm" mb="md">
-              <Flex justify="space-between" align="center" mb="sm">
-                <Title order={1} size="h3">Happy Sunday Puzzler</Title>
-                { user && user.name
-                  ? <Menu shadow="md" width={200}>
-                      <Menu.Target>
-                        <NavLink component="button" label={user.name} w="auto" active variant="subtle" />
-                      </Menu.Target>
-                      <Menu.Dropdown>
-                        <Menu.Item onClick={logout}>
-                          Logout
-                        </Menu.Item>
-                      </Menu.Dropdown>
-                    </Menu>
-                  : <NavLink component="button" label="Anmelden" w="auto" active variant="subtle" onClick={open} />
-                }
-              </Flex>
-              <Flex gap={{ base: 'xs' }} wrap="wrap">
-                <ResultChip result={results[0]} active={puzzleIndex === 0}>&gt; 1200</ResultChip>
-                <ResultChip result={results[1]} active={puzzleIndex === 1}>&gt; 1400</ResultChip>
-                <ResultChip result={results[2]} active={puzzleIndex === 2}>&gt; 1600</ResultChip>
-                <ResultChip result={results[3]} active={puzzleIndex === 3}>&gt; 1800</ResultChip>
-                <ResultChip result={results[4]} active={puzzleIndex === 4}>&gt; 2000</ResultChip>
-              </Flex>
-            </Card>
+            <Box display={{ base: 'none', md: 'block' }} mb="md">
+              <HeadlineCard {...{ user, logout, results, puzzleIndex, open }} />
+            </Box>
             <Card withBorder shadow="sm">
               <Tabs value={activeTab} onChange={setActiveTab} variant="pills" mb="sm">
                 <Tabs.List grow>
@@ -300,6 +305,17 @@ export default function Home() {
               </form>
             </Tabs.Panel>
           </Tabs>
+        </Modal>
+
+        <Modal opened={pwaModalOpen} onClose={() => setPwaModalOpen(false)}>
+          <Text fw="bold">Schön dass du dabei bist!</Text>
+          <Text mb="md">Du kannst die Website übrigens auch als App abspeichern. Drücke dafür auf die drei Punkte in deinem mobilen Browser und auf &quot;Installieren&quot; (Firefox) oder &quot;App installieren&quot; (Chrome)</Text>
+
+          <Image
+            alt="chrome screenshot"
+            radius="md"
+            src="/chrome.png"
+          />
         </Modal>
       </main>
     </>
