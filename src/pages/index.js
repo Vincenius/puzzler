@@ -128,6 +128,7 @@ export default function Home() {
     }).then(res => res.json())
     .then(res => {
       if (!res.error) {
+        mutate('/api/users')
         refetchLeaderboards()
         setError('')
         close()

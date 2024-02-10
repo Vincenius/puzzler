@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generatePwaAssets": "pwa-asset-generator ./public/icons/logo.png ./public/icons -m ./public/manifest.json"
   },
   "dependencies": {
     "@mantine/core": "^7.5.0",
@@ -15,8 +16,10 @@
     "chess.js": "^0.13.1",
     "crypto-js": "^4.2.0",
     "iron-session": "^8.0.1",
+    "mongodb": "^6.3.0",
     "next": "14.1.0",
     "next-pwa": "^5.6.0",
+    "pwa-asset-generator": "^6.3.1",
     "react": "^18",
     "react-chessboard": "^4.3.4",
     "react-dom": "^18",
@@ -26,7 +29,6 @@
     "csv-parse": "^5.5.3",
     "eslint": "^8",
     "eslint-config-next": "14.1.0",
-    "mongodb": "^6.3.0",
     "postcss": "^8.4.33",
     "postcss-preset-mantine": "^1.12.3",
     "postcss-simple-vars": "^7.0.1"
