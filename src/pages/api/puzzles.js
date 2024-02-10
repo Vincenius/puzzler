@@ -1,15 +1,17 @@
 import { MongoClient, ObjectId } from 'mongodb';
 import { getIronSession } from 'iron-session';
 
-const getPipeline = (minValue, maxValue) => [{
+const getPipeline = (minValue, maxValue, minPlayCount) => [{
   $addFields: {
     ratingInt: { $toInt: "$Rating" },
     popularityInt: { $toInt: "$Popularity" },
     ratingDeviationInt: { $toInt: "$RatingDeviation" },
+    nbPlaysInt: { $toInt: "$NbPlays" },
   }
 }, {
   $match: {
     ratingInt: { $gte: minValue, $lte: maxValue },
+    nbPlaysInt: { $gte: minPlayCount },
     date: { $exists: false }
   }
 }, {
@@ -34,9 +36,9 @@ export default async function handler(req, res) {
       const puzzles = await puzzlesCollection.find({ date: today }).toArray()
 
       if (puzzles.length === 0) { // generate puzzles for today if not done already
-        const ratings = [[1200,1400],[1400,1600],[1600,1800],[1800,2000],[2000,2200]]
+        const ratings = [[1200,1400, 5000],[1400,1600, 4000],[1600,1800, 3000],[1800,2000, 2000],[2000,2200, 1000]]
         const newPuzzles = await Promise.all(
-          ratings.map((arr) => puzzlesCollection.aggregate(getPipeline(arr[0], arr[1])).toArray())
+          ratings.map((arr) => puzzlesCollection.aggregate(getPipeline(arr[0], arr[1], arr[2])).toArray())
         )
         result = newPuzzles.flat().map(p => ({ ...p, solved: {}}))
         const puzzleIdsToUpdate = result.map((puzzle) => puzzle._id);
