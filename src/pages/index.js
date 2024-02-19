@@ -102,8 +102,9 @@ export default function Home() {
       fetch('/api/puzzles', {
         method: 'PUT',
         body: JSON.stringify({ success, id: puzzles[puzzleIndex]._id })
+      }).then(() => {
+        refetchLeaderboards()
       })
-      refetchLeaderboards()
     }
   }
 
