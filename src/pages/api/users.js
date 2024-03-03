@@ -57,12 +57,11 @@ export default async function handler(req, res) {
         )
         const user = await accountsCollection.findOne({ name: username })
 
-        if (user.password === passHash) {
+        if (user && user.password === passHash) {
           // merge session results into user
           const userId = user._id.toString()
           const puzzlesCollection = db.collection('puzzles');
           const sessionPuzzles = await puzzlesCollection.find({[`solved.${session.id}`]: { $exists: true }}).toArray()
-          console.log(session.id, userId)
 
           await Promise.all(sessionPuzzles.map(p => {
             return p.solved[userId] !== true && p.solved[userId] !== false

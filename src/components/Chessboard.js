@@ -45,7 +45,6 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
   }, [fen, moves, game, parsedMoves, success])
 
   const highlightMove = (from, to) => {
-    console.log(from, to)
     const colour = "rgba(155,199,0,.41)"
     setRightClickedSquares({
       [from]: { backgroundColor: colour },

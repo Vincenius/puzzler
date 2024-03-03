@@ -1,14 +1,13 @@
 import Head from "next/head";
-import { Inter } from "next/font/google";
 import useSWR, { useSWRConfig }  from 'swr'
 import PuzzleBoard from "@/components/Chessboard";
 import { useState, useEffect } from "react";
-import { Flex, Badge, Box, LoadingOverlay, Card, Title, Text, Tabs, Table, NavLink, Modal, TextInput, Image, PasswordInput, Button, Menu } from '@mantine/core';
+import { Flex, Badge, Box, LoadingOverlay, Card, Title, Text, Tabs, Table, NavLink, Modal, TextInput, Image, PasswordInput, Button, Menu, ActionIcon, Popover } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { formatDate, getBeginningOfWeek, getEndOfWeek, getMonthDate } from "@/utils/dateHelper";
+import { formatDate, getBeginningOfWeek, getEndOfWeek, getMonthDate, getDayAfter, formatISODate, getDayBefore, getFirstDayOfMonth, getLastDayOfMonth } from "@/utils/dateHelper";
+import { IconArrowBigLeftLine, IconArrowBigRightLine } from '@tabler/icons-react'
 
-const inter = Inter({ subsets: ["latin"] });
-const fetcher = (...args) => fetch(...args).then(res => res.json())
+const fetcher = (...args) => fetch(...args).then(res => res.json());
 
 function transformURL(url) {
   var match = url.match(/\#Some\((\d+)\)/);
@@ -47,7 +46,6 @@ const HeadlineCard = ({ user, logout, results, puzzleIndex, open }) => <Card wit
 </Card>
 
 const ResultChip = ({ children, result, active }) => <Badge
-    checked={result !== undefined}
     color={result === true ? "green" : result === undefined ? "blue" : "red"}
     variant={result === undefined ? active ? 'light' : "outline" : "filled" }
     size="xs"
@@ -65,11 +63,15 @@ export default function Home() {
   const [error, setError] = useState('')
   const [userLoading, setUserLoading] = useState(false)
   const [pwaModalOpen, setPwaModalOpen] = useState(false)
+  const [leaderboardsFrom, setLeaderboardsFrom] = useState(formatISODate(new Date()))
+  const [leaderboardsTo, setLeaderboardsTo] = useState(formatISODate(new Date()))
+  const queryString = activeTab === 'allTime' ? '' : `?from=${leaderboardsFrom}&to=${leaderboardsTo}${activeTab === 'day' ? '&details=true' : ''}`
   const { data: puzzleData, isLoading: isPuzzleLoading } = useSWR('/api/puzzles', fetcher)
   const { data: user, isLoading: isUserLoading } = useSWR('/api/users', fetcher)
-  const { data: tableData, isLoading: isTableLoading } = useSWR(`/api/leaderboards?q=${activeTab}`, fetcher)
+  const { data: { leaderboard, details } = {}, isLoading: isTableLoading } = useSWR(`/api/leaderboards${queryString}`, fetcher)
   const isLoading = isPuzzleLoading || isUserLoading
   const puzzles = puzzleData && puzzleData.sort((a,b) => parseInt(a.Rating) - parseInt(b.Rating))
+  const nextDisabled = formatISODate(new Date()) === leaderboardsTo || new Date(leaderboardsTo) > new Date()
 
   useEffect(() => {
     if (!isLoading && !isInit) {
@@ -90,10 +92,11 @@ export default function Home() {
   const gameUrl = isLoading ? "" : transformURL(puzzles[puzzleIndex].GameUrl)
 
   const refetchLeaderboards = () => {
-    mutate('/api/leaderboards?q=day')
-    mutate('/api/leaderboards?q=week')
-    mutate('/api/leaderboards?q=month')
-    mutate('/api/leaderboards?q=allTime')
+    mutate(
+      key => typeof key === 'string' && key.startsWith('/api/leaderboards'),
+      undefined,
+      { revalidate: true }
+    )
   }
 
   const setSuccess = (success) => {
@@ -109,11 +112,11 @@ export default function Home() {
   }
 
   const dateDisplay = activeTab === 'day'
-    ? formatDate(new Date())
+    ? formatDate(new Date(leaderboardsFrom))
     : activeTab === 'week'
-      ? `${getBeginningOfWeek()} - ${getEndOfWeek()}`
+      ? `${formatDate(new Date(leaderboardsFrom))} - ${formatDate(new Date(leaderboardsTo))}`
       : activeTab === 'month'
-        ? getMonthDate()
+        ? getMonthDate(new Date(leaderboardsFrom))
         : 'Gesamter Zeitraum'
 
   const handleRegister = e => {
@@ -185,6 +188,48 @@ export default function Home() {
     })
   }
 
+  const handleTabChange = val => {
+    refetchLeaderboards()
+    if (val === 'day') {
+      setLeaderboardsFrom(formatISODate(new Date()))
+      setLeaderboardsTo(formatISODate(new Date()))
+    } else if (val === 'week') {
+      setLeaderboardsFrom(formatISODate(getBeginningOfWeek()))
+      setLeaderboardsTo(formatISODate(getEndOfWeek()))
+    } else if (val === 'month') {
+      setLeaderboardsFrom(formatISODate(getFirstDayOfMonth()))
+      setLeaderboardsTo(formatISODate(getLastDayOfMonth()))
+    }
+    setActiveTab(val)
+  }
+
+  const navigateLeaderboards = (direction) => {
+    let newFrom
+    let newTo
+    if (activeTab === 'day' && direction === 'prev') {
+      newFrom = getDayBefore(leaderboardsFrom)
+      newTo = getDayBefore(leaderboardsTo)
+    } else if (activeTab === 'day' && direction === 'next') {
+      newFrom = getDayAfter(leaderboardsFrom)
+      newTo = getDayAfter(leaderboardsTo)
+    } else if (activeTab === 'week' && direction === 'prev') {
+      newFrom = getDayBefore(leaderboardsFrom, 7)
+      newTo = getDayBefore(leaderboardsTo, 7)
+    } else if (activeTab === 'week' && direction === 'next') {
+      newFrom = getDayAfter(leaderboardsFrom, 7)
+      newTo = getDayAfter(leaderboardsTo, 7)
+    } else if (activeTab === 'month' && direction === 'prev') {
+      newFrom = getFirstDayOfMonth(getDayBefore(leaderboardsFrom, 7))
+      newTo = getLastDayOfMonth(getDayBefore(leaderboardsFrom, 7))
+    } else if (activeTab === 'month' && direction === 'next') {
+      newFrom = getFirstDayOfMonth(getDayAfter(leaderboardsTo, 7))
+      newTo = getLastDayOfMonth(getDayAfter(leaderboardsTo, 7))
+    }
+
+    setLeaderboardsFrom(formatISODate(newFrom))
+    setLeaderboardsTo(formatISODate(newTo))
+  }
+
   return (
     <>
       <Head>
@@ -218,7 +263,7 @@ export default function Home() {
               <HeadlineCard {...{ user, logout, results, puzzleIndex, open }} />
             </Box>
             <Card withBorder shadow="sm">
-              <Tabs value={activeTab} onChange={setActiveTab} variant="pills" mb="sm">
+              <Tabs value={activeTab} onChange={handleTabChange} variant="pills" mb="sm">
                 <Tabs.List grow>
                   <Tabs.Tab value="day">
                     Heute
@@ -235,7 +280,15 @@ export default function Home() {
                 </Tabs.List>
               </Tabs>
 
-              <Text fw={200} opacity={0.5} mb="sm">{dateDisplay}</Text>
+              <Flex>
+                { activeTab !== 'allTime' && <ActionIcon variant="light" aria-label="go time back" onClick={() => navigateLeaderboards('prev')}>
+                  <IconArrowBigLeftLine style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                </ActionIcon> }
+                <Text fw={200} opacity={0.5} mb="sm" mx="md">{dateDisplay}</Text>
+                { activeTab !== 'allTime' && <ActionIcon variant="light" aria-label="go time next" onClick={() => navigateLeaderboards('next')} disabled={nextDisabled}>
+                  <IconArrowBigRightLine style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                </ActionIcon> }
+              </Flex>
 
               <Box pos="relative">
                 <LoadingOverlay visible={isTableLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
@@ -253,16 +306,44 @@ export default function Home() {
                       <Table.Tr></Table.Tr>
                       <Table.Tr></Table.Tr>
                     </> }
-                    { !isTableLoading && tableData && tableData.sort((a, b) => b.solved - a.solved).map((u, index) => (
+                    { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => (
                       <Table.Tr key={u.id}>
                         <Table.Td>{index+1}.</Table.Td>
                         <Table.Td>
                           { user && user.id === u.id && <Text c="green" fw={600}>
                             {u.name || 'Anonym'}
                           </Text> }
-                          { !user || (user.id !== u.id) && <Text>
-                            {u.name || 'Anonym'}
-                          </Text> }
+                          { (!user || (user.id !== u.id)) && <>
+                            {(details && details.length)
+                              ? <Popover width={200} withArrow shadow="md" arrowPosition="side">
+                                <Popover.Target>
+                                  <Text c="blue" style={{ cursor: 'pointer' }}>{u.name || 'Anonym'}</Text>
+                                </Popover.Target>
+                                <Popover.Dropdown>
+                                  <Flex justify="center">
+                                    {details
+                                      .sort((a, b) => parseInt(a.Rating) - parseInt(b.Rating))
+                                      .map(p => {
+                                        const result = p.solved[u.id]
+                                        return <Badge
+                                          key={`${u.id}-${p._id}`}
+                                          circle
+                                          color={result === true ? "green" : result === undefined ? "blue" : "red"}
+                                          variant={result === undefined ? "outline" : "filled" }
+                                          size="xs"
+                                          mr="sm"
+                                        >
+                                          {/*  */}
+                                        </Badge>
+                                      })
+                                    }
+                                  </Flex>
+                                </Popover.Dropdown>
+                              </Popover>
+                            : <Text>
+                              {u.name || 'Anonym'}
+                            </Text> }
+                          </> }
                         </Table.Td>
                         <Table.Td>{u.solved}</Table.Td>
                       </Table.Tr>)
