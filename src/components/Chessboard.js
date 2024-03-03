@@ -212,11 +212,17 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
     );
     // not a valid move
     if (!foundMove) {
-      // check if clicked on new piece
-      const hasMoveOptions = getMoveOptions(square);
-      // if new piece, setMoveFrom, otherwise clear moveFrom
-      setMoveFrom(hasMoveOptions ? square : "");
-      return;
+      if (moveFrom === square) {
+        setMoveFrom("")
+        setOptionSquares({});
+        return
+      } else {
+        // check if clicked on new piece
+        const hasMoveOptions = getMoveOptions(square);
+        // if new piece, setMoveFrom, otherwise clear moveFrom
+        setMoveFrom(hasMoveOptions ? square : "");
+        return;
+      }
     }
 
     handleMove({ moveFrom, square, foundMove })
