@@ -15,7 +15,7 @@ const createChallenge = (verifier) => base64URLEncode(sha256(verifier));
 // see https://lichess.org/api#tag/OAuth/operation/oauth
 export default async function handler(req, res) {
   const response_type = 'code'
-  const client_id = 'puzzler-fun'
+  const client_id = 'puzzler'
   const redirect_uri = encodeURIComponent(`${process.env.BASE_URL}/api/lichess/callback`)
   const code_challenge_method = 'S256'
   const verifier = createVerifier()

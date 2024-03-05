@@ -6,10 +6,10 @@ export default function Document() {
     <Html lang="de">
       <Head>
         <ColorSchemeScript defaultColorScheme="auto" />
-        <meta name="application-name" content="Puzzler Fun" />
+        <meta name="application-name" content="Puzzler" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Puzzler Fun" />
-        <meta name="description" content="Puzzler Fun" />
+        <meta name="apple-mobile-web-app-title" content="Puzzler" />
+        <meta name="description" content="Puzzler" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-config" content="icons/browserconfig.xml" />

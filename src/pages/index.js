@@ -20,7 +20,7 @@ function transformURL(url) {
 
 const HeadlineCard = ({ user, results, puzzleIndex, setResults, setPuzzleIndex }) => <Card withBorder shadow="sm">
 <Flex justify="space-between" align="center" mb="sm">
-  <Title order={1} size="h3">Puzzler Fun</Title>
+  <Title order={1} size="h3">Puzzler</Title>
   <AccountHandler {...{ user, setResults, setPuzzleIndex }} />
 </Flex>
 <Flex gap={{ base: 'xs' }} wrap="wrap">
@@ -41,6 +41,7 @@ const ResultChip = ({ children, result, active }) => <Badge
   </Badge>
 
 export default function Home() {
+  // TODO read url param (success=true | false) and show notification
   const { mutate } = useSWRConfig()
   const [puzzleIndex, setPuzzleIndex] = useState(0)
   const [activeTab, setActiveTab] = useState('day');

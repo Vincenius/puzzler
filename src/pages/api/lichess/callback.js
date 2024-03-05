@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     uri: 'https://lichess.org/oauth',
     code_verifier: session.verifier,
     redirect_uri: `${process.env.BASE_URL}/api/lichess/callback`,
-    client_id: 'puzzler-fun',
+    client_id: 'puzzler',
     scope: 'email:read',
   }
   const formBody = [];
