@@ -3,46 +3,49 @@
 // import { MongoClient } from 'mongodb';
 
 // export default async function handler(req, res) {
-//   const client = new MongoClient(process.env.MONGODB_URI);
-//   console.log('loading puzzles')
-//   const file = fs.readFileSync(process.cwd() + '/data/lichess_db_puzzle.csv')
-//   const records = parse(file, {
-//     columns: true,
-//     skip_empty_lines: true
-//   });
-//   console.log('done loading')
-//   const useRecords = records
-//     .sort((a, b) => parseInt(b.Popularity) - parseInt(a.Popularity))
-//     .slice(0,500000)
-//   const batchSize = 10000;
-//   let currentIndex = 0;
-//   try {
-//     await client.connect();
-//     console.log('Connected to MongoDB server');
-
-//     const db = client.db('puzzler');
-//     const puzzlesCollection = db.collection('puzzles');
-
-//     while (currentIndex < useRecords.length) {
-//       // Get the current batch of puzzles
-//       const currentBatch = useRecords.slice(currentIndex, currentIndex + batchSize);
-//       const mapped = currentBatch.map(p => ({
-//         ...p,
-//         Themes: p.Themes.split(' '),
-//       }))
-//       // Insert the current batch into the collection
-//       const result = await puzzlesCollection.insertMany(mapped);
-//       console.log(`${currentIndex} of ${useRecords.length} puzzles inserted successfully`);
-
-//       // Move to the next batch
-//       currentIndex += batchSize;
+//   if (req.method === 'POST') {
+//     const client = new MongoClient(process.env.MONGODB_URI);
+//     console.log('loading puzzles')
+//     const file = fs.readFileSync(process.cwd() + '/data/lichess_db_puzzle.csv')
+//     const records = parse(file, {
+//       columns: true,
+//       skip_empty_lines: true
+//     });
+//     console.log('done loading')
+//     const useRecords = records
+//       .sort((a, b) => parseInt(b.Popularity) - parseInt(a.Popularity))
+//       .slice(0,500000)
+//     const batchSize = 1000;
+//     let currentIndex = 0;
+//     try {
+//       await client.connect();
+//       console.log('Connected to MongoDB server');
+  
+//       const db = client.db(process.env.MONGODB_DB);
+//       const puzzlesCollection = db.collection('puzzles');
+  
+//       while (currentIndex < useRecords.length) {
+//         // Get the current batch of puzzles
+//         const currentBatch = useRecords.slice(currentIndex, currentIndex + batchSize);
+//         const mapped = currentBatch.map(p => ({
+//           ...p,
+//           Themes: p.Themes.split(' '),
+//         }))
+//         // Insert the current batch into the collection
+//         const result = await puzzlesCollection.insertMany(mapped);
+//         console.log(`${currentIndex} of ${useRecords.length} puzzles inserted successfully`);
+  
+//         // Move to the next batch
+//         currentIndex += batchSize;
+//       }
+//     } catch (error) {
+//       console.error('Error inserting puzzles:', error);
+//     } finally {
+//       // Close the connection
+//       client.close();
 //     }
-//   } catch (error) {
-//     console.error('Error inserting puzzles:', error);
-//   } finally {
-//     // Close the connection
-//     client.close();
 //   }
+
 
 //   res.status(200).json({ name: "John Doe" });
 

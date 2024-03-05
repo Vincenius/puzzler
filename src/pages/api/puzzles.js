@@ -27,7 +27,7 @@ export default async function handler(req, res) {
   const client = new MongoClient(process.env.MONGODB_URI);
   try {
     await client.connect();
-    const db = client.db('puzzler');
+    const db = client.db(process.env.MONGODB_DB);
     const puzzlesCollection = db.collection('puzzles');
 
     if (req.method === 'GET') {

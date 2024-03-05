@@ -36,7 +36,7 @@ export default async function handler(req, res) {
 
     try {
       await client.connect();
-      const db = client.db('puzzler');
+      const db = client.db(process.env.MONGODB_DB);
       const puzzlesCollection = db.collection('puzzles');
       const accountsCollection = db.collection('accounts');
       const query = getQuery(req.query)

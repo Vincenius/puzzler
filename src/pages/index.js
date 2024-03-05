@@ -1,13 +1,12 @@
 import Head from "next/head";
 import useSWR, { useSWRConfig }  from 'swr'
 import PuzzleBoard from "@/components/Chessboard";
+import AccountHandler from "@/components/AccountHandler";
 import { useState, useEffect } from "react";
-import { Flex, Badge, Box, LoadingOverlay, Card, Title, Text, Tabs, Table, NavLink, Modal, TextInput, Image, PasswordInput, Button, Menu, ActionIcon, Popover } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { Flex, Badge, Box, LoadingOverlay, Card, Title, Text, Tabs, Table, Modal, Image, ActionIcon, Popover } from '@mantine/core';
 import { formatDate, getBeginningOfWeek, getEndOfWeek, getMonthDate, getDayAfter, formatISODate, getDayBefore, getFirstDayOfMonth, getLastDayOfMonth } from "@/utils/dateHelper";
+import { fetcher } from "@/utils/fetcher";
 import { IconArrowBigLeftLine, IconArrowBigRightLine } from '@tabler/icons-react'
-
-const fetcher = (...args) => fetch(...args).then(res => res.json());
 
 function transformURL(url) {
   var match = url.match(/\#Some\((\d+)\)/);
@@ -19,22 +18,10 @@ function transformURL(url) {
   return url;
 }
 
-const HeadlineCard = ({ user, logout, results, puzzleIndex, open }) => <Card withBorder shadow="sm">
+const HeadlineCard = ({ user, results, puzzleIndex, setResults, setPuzzleIndex }) => <Card withBorder shadow="sm">
 <Flex justify="space-between" align="center" mb="sm">
-  <Title order={1} size="h3">Happy Sunday Puzzler</Title>
-  { user && user.name
-    ? <Menu shadow="md" width={200}>
-        <Menu.Target>
-          <NavLink component="button" label={user.name} w="auto" active variant="subtle" />
-        </Menu.Target>
-        <Menu.Dropdown>
-          <Menu.Item onClick={logout}>
-            Logout
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
-    : <NavLink component="button" label="Anmelden" w="auto" active variant="subtle" onClick={open} />
-  }
+  <Title order={1} size="h3">Puzzler Fun</Title>
+  <AccountHandler {...{ user, setResults, setPuzzleIndex }} />
 </Flex>
 <Flex gap={{ base: 'xs' }} wrap="wrap">
   <ResultChip result={results[0]} active={puzzleIndex === 0}>&gt; 1200</ResultChip>
@@ -55,14 +42,10 @@ const ResultChip = ({ children, result, active }) => <Badge
 
 export default function Home() {
   const { mutate } = useSWRConfig()
-  const [opened, { open, close }] = useDisclosure(false);
   const [puzzleIndex, setPuzzleIndex] = useState(0)
   const [activeTab, setActiveTab] = useState('day');
   const [results, setResults] = useState([])
   const [isInit, setIsInit] = useState(false)
-  const [error, setError] = useState('')
-  const [userLoading, setUserLoading] = useState(false)
-  const [pwaModalOpen, setPwaModalOpen] = useState(false)
   const [leaderboardsFrom, setLeaderboardsFrom] = useState(formatISODate(new Date()))
   const [leaderboardsTo, setLeaderboardsTo] = useState(formatISODate(new Date()))
   const queryString = activeTab === 'allTime' ? '' : `?from=${leaderboardsFrom}&to=${leaderboardsTo}${activeTab === 'day' ? '&details=true' : ''}`
@@ -119,75 +102,6 @@ export default function Home() {
         ? getMonthDate(new Date(leaderboardsFrom))
         : 'Gesamter Zeitraum'
 
-  const handleRegister = e => {
-    e.preventDefault();
-    setUserLoading(true);
-    const username = e.target.elements.username.value;
-    const password = e.target.elements.password.value;
-    const passwordRepeat = e.target.elements.passwordRepeat.value;
-
-    fetch('/api/users', {
-      method: 'POST',
-      body: JSON.stringify({ type: "CREATE", username, password, passwordRepeat })
-    }).then(res => res.json())
-    .then(res => {
-      if (!res.error) {
-        mutate('/api/users')
-        refetchLeaderboards()
-        setError('')
-        close()
-        setPwaModalOpen(true)
-      } else {
-        setError(res.msg)
-      }
-    }).catch(err => {
-      console.error(err)
-    }).finally(() => setUserLoading(false))
-  }
-
-  const handleLogin = e => {
-    e.preventDefault();
-    setUserLoading(true);
-    const username = e.target.elements.username.value;
-    const password = e.target.elements.password.value;
-
-    fetch('/api/users', {
-      method: 'POST',
-      body: JSON.stringify({ type: "LOGIN", username, password })
-    }).then(res => res.json())
-    .then(res => {
-      if (!res.error) {
-        setError('')
-        mutate('/api/users')
-        refetchLeaderboards()
-
-        const userId = res.id
-        const initResults = puzzles.map(puzzle => {
-          const result = puzzle.solved[userId]
-          if (result === true || result === false) {
-            return result
-          }
-        }).filter(r => r !== undefined)
-        setResults(initResults)
-        setPuzzleIndex(initResults.length > 4 ? 4 : initResults.length)
-        close('')
-      } else {
-        setError(res.msg)
-      }
-    }).catch(err => {
-      console.error(err)
-    }).finally(() => setUserLoading(false))
-  }
-
-  const logout = () => {
-    fetch('/api/logout').then(() => {
-      mutate('/api/users')
-      refetchLeaderboards()
-      setResults([])
-      setPuzzleIndex(0)
-    })
-  }
-
   const handleTabChange = val => {
     refetchLeaderboards()
     if (val === 'day') {
@@ -233,15 +147,15 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Puzzler | Happy Sunday</title>
-        <meta name="description" content="Puzzle Contest für die Happy Sunday Gruppe" />
+        <title>Puzzler Fun</title>
+        <meta name="description" content="A Puzzle Contest for you and your friends" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main style={{ paddingBottom: '2em' }}>
         <Flex align={{ base: "center", md: "flex-start" }} justify="center" mt="lg" p="md" direction={{ base: "column", md: "row" }} gap="xl">
           <Box display={{ base: 'block', md: 'none' }} w="100%" maw={450}>
-            <HeadlineCard {...{ user, logout, results, puzzleIndex, open }} />
+            <HeadlineCard {...{ user, results, puzzleIndex, setResults, setPuzzleIndex }} />
           </Box>
           <Box pos="relative" w="100%" maw={450}>
             <LoadingOverlay visible={isLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
@@ -260,22 +174,22 @@ export default function Home() {
           </Box>
           <Box w="100%" maw={450}>
             <Box display={{ base: 'none', md: 'block' }} mb="md">
-              <HeadlineCard {...{ user, logout, results, puzzleIndex, open }} />
+              <HeadlineCard {...{ user, results, puzzleIndex, setResults, setPuzzleIndex }} />
             </Box>
             <Card withBorder shadow="sm">
               <Tabs value={activeTab} onChange={handleTabChange} variant="pills" mb="sm">
                 <Tabs.List grow>
                   <Tabs.Tab value="day">
-                    Heute
+                    Today
                   </Tabs.Tab>
                   <Tabs.Tab value="week">
-                    Woche
+                    Week
                   </Tabs.Tab>
                   <Tabs.Tab value="month">
-                    Monat
+                    Month
                   </Tabs.Tab>
                   <Tabs.Tab value="allTime">
-                    Alle
+                    All Time
                   </Tabs.Tab>
                 </Tabs.List>
               </Tabs>
@@ -296,8 +210,8 @@ export default function Home() {
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Th></Table.Th>
-                      <Table.Th>Spieler</Table.Th>
-                      <Table.Th>Punkte</Table.Th>
+                      <Table.Th>Player</Table.Th>
+                      <Table.Th>Points</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
@@ -354,52 +268,6 @@ export default function Home() {
             </Card>
           </Box>
         </Flex>
-
-        <Modal opened={opened} onClose={() => {
-          close()
-          setError('')
-        }}>
-          <Tabs defaultValue="register" variant="outline" onChange={() => setError('')}>
-            <Tabs.List grow mb="md">
-              <Tabs.Tab value="register" disabled={userLoading}>
-                Registrieren
-              </Tabs.Tab>
-              <Tabs.Tab value="login" disabled={userLoading}>
-                Einloggen
-              </Tabs.Tab>
-            </Tabs.List>
-
-            <Tabs.Panel value="register">
-              <form onSubmit={handleRegister}>
-                <TextInput name="username" label="Username" mb="sm" required />
-                <PasswordInput name="password" label="Passwort" mb="sm" required />
-                <PasswordInput name="passwordRepeat" label="Passwort wiederholen" mb="sm" required />
-                { error && <Text c="red" mb="sm">{error}</Text> }
-                <Button type="submit" loading={userLoading} disabled={userLoading}>Account Erstellen</Button>
-              </form>
-            </Tabs.Panel>
-
-            <Tabs.Panel value="login">
-              <form onSubmit={handleLogin}>
-                <TextInput name="username" label="Username" mb="sm" required />
-                <PasswordInput name="password" label="Passwort" mb="sm" required />
-                { error && <Text c="red" mb="sm">{error}</Text> }
-                <Button type="submit" loading={userLoading} disabled={userLoading}>Einloggen</Button>
-              </form>
-            </Tabs.Panel>
-          </Tabs>
-        </Modal>
-
-        <Modal opened={pwaModalOpen} onClose={() => setPwaModalOpen(false)}>
-          <Text fw="bold">Schön dass du dabei bist!</Text>
-          <Text mb="md">Du kannst die Website übrigens auch als App abspeichern. Drücke dafür auf die drei Punkte in deinem mobilen Browser und auf &quot;Installieren&quot; (Firefox) oder &quot;App installieren&quot; (Chrome)</Text>
-
-          <Image
-            alt="chrome screenshot"
-            radius="md"
-            src="/chrome.png"
-          />
-        </Modal>
       </main>
     </>
   );

@@ -9,7 +9,7 @@
 //     await client.connect();
 //     console.log('Connected to MongoDB server');
 
-//     const db = client.db('puzzler');
+//     const db = client.db(process.env.MONGODB_DB);
 //     const puzzlesCollection = db.collection('puzzles');
 
 //     await puzzlesCollection.updateMany(
