@@ -48,10 +48,10 @@ export const getLastDayOfMonth = (date) => {
 export const getMonthDate = (date) => {
   const day = new Date(date);
   const monthNames = [
-      "Januar", "Februar", "März",
-      "April", "Mai", "Juni", "Juli",
-      "August", "September", "Oktober",
-      "November", "Dezember"
+      "January", "February", "March",
+      "April", "May", "June", "July",
+      "August", "September", "October",
+      "November", "December"
   ];
 
   const month = monthNames[day.getMonth()];
