@@ -101,7 +101,7 @@ export default function Home() {
       ? `${formatDate(new Date(leaderboardsFrom))} - ${formatDate(new Date(leaderboardsTo))}`
       : activeTab === 'month'
         ? getMonthDate(new Date(leaderboardsFrom))
-        : 'Gesamter Zeitraum'
+        : 'All Time'
 
   const handleTabChange = val => {
     refetchLeaderboards()
