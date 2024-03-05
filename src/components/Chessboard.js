@@ -359,7 +359,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
             onClick={getSolution}
             size="compact-sm"
           >
-            Lösung anzeigen
+            Show Solution
           </Button>}
         </Paper>
         <Button
@@ -371,7 +371,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
           h="auto"
           onClick={handleNextPuzzle}
         >
-          Weiter
+          Next
         </Button>
       </Flex>
     </>
