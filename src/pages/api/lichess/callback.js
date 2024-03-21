@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     code_verifier: session.verifier,
     redirect_uri: `${process.env.BASE_URL}/api/lichess/callback`,
     client_id: 'puzzler',
-    scope: 'email:read',
+    scope: 'email:read', // follow:read ???
   }
   const formBody = [];
   for (let property in data) {

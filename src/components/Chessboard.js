@@ -312,6 +312,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
         promotionToSquare={moveTo}
         showPromotionDialog={showPromotionDialog}
         arePiecesDraggable={!isDone}
+        width="100%"
       />
       <Flex
         justify={{ sm: 'center' }}
