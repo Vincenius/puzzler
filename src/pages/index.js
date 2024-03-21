@@ -145,7 +145,7 @@ export default function Home() {
           <Card w="100%" withBorder shadow="sm" p="xs">
             <Box maw={960} m="0 auto" w="100%" px={{ base: 'xs', sm: 'md' }}>
               <Flex justify="space-between" align="center">
-                <Link href="/">
+                <Link href="/" style={{ color: '#000', textDecoration: 'none' }}>
                   <Title order={1} size="h3">Puzzler</Title>
                 </Link>
 
