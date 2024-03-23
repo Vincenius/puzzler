@@ -52,6 +52,7 @@ export default async function handler(req, res) {
         result = puzzles
       }
 
+      result = result && result.sort((a,b) => parseInt(a.Rating) - parseInt(b.Rating))
       res.status(200).json(result);
     } else if (req.method === 'PUT') {
       const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.SESSION_KEY });

@@ -1,13 +1,15 @@
-import Head from "next/head";
-import Link from "next/link";
 import useSWR, { useSWRConfig }  from 'swr'
 import PuzzleBoard from "@/components/Chessboard";
-import AccountHandler from "@/components/AccountHandler";
-import { useState, useEffect } from "react";
-import { Flex, Badge, Box, LoadingOverlay, Card, Title, Text, Tabs, Table, Modal, Image, ActionIcon, Popover } from '@mantine/core';
+import Layout from "@/components/Layout";
+import Link from "next/link";
+import { useState } from "react";
+import { Flex, Badge, Box, LoadingOverlay, Card, Text, Tabs, Table, ActionIcon, Popover } from '@mantine/core';
 import { formatDate, getBeginningOfWeek, getEndOfWeek, getMonthDate, getDayAfter, formatISODate, getDayBefore, getFirstDayOfMonth, getLastDayOfMonth } from "@/utils/dateHelper";
 import { fetcher } from "@/utils/fetcher";
 import { IconArrowBigLeftLine, IconArrowBigRightLine } from '@tabler/icons-react'
+import { usePuzzleIndexStore } from '@/stores/usePuzzleIndexStore'
+import { useResultsStore } from '@/stores/useResultsStore'
+import { useLoginModalOpen } from '@/stores/useLoginModalOpen'
 
 function transformURL(url) {
   var match = url.match(/\#Some\((\d+)\)/);
@@ -19,44 +21,24 @@ function transformURL(url) {
   return url;
 }
 
-const ResultChip = ({ children, result, active }) => <Badge
-    color={result === true ? "green" : result === undefined ? "blue" : "red"}
-    variant={result === undefined ? active ? 'light' : "outline" : "filled" }
-    size="xs"
-  >
-    {children}
-  </Badge>
-
 export default function Home() {
-  // TODO read url param (success=true | false) and show notification
+  // TODO read url param (success=true | false) and show notification and setLoginModalOpen(false)
   const { mutate } = useSWRConfig()
-  const [puzzleIndex, setPuzzleIndex] = useState(0)
+  const puzzleIndex = usePuzzleIndexStore(state => state.puzzleIndex)
+  const setPuzzleIndex = usePuzzleIndexStore(state => state.setPuzzleIndex)
+  const results = useResultsStore(state => state.results)
+  const setResults = useResultsStore(state => state.setResults)
+  const setLoginModalOpen = useLoginModalOpen(state => state.setIsOpen)
+
   const [activeTab, setActiveTab] = useState('day');
-  const [results, setResults] = useState([])
-  const [isInit, setIsInit] = useState(false)
   const [leaderboardsFrom, setLeaderboardsFrom] = useState(formatISODate(new Date()))
   const [leaderboardsTo, setLeaderboardsTo] = useState(formatISODate(new Date()))
   const queryString = activeTab === 'allTime' ? '' : `?from=${leaderboardsFrom}&to=${leaderboardsTo}${activeTab === 'day' ? '&details=true' : ''}`
-  const { data: puzzleData, isLoading: isPuzzleLoading } = useSWR('/api/puzzles', fetcher)
+  const { data: puzzles, isLoading: isPuzzleLoading } = useSWR('/api/puzzles', fetcher)
   const { data: user, isLoading: isUserLoading } = useSWR('/api/users', fetcher)
   const { data: { leaderboard, details } = {}, isLoading: isTableLoading } = useSWR(`/api/leaderboards${queryString}`, fetcher)
   const isLoading = isPuzzleLoading || isUserLoading
-  const puzzles = puzzleData && puzzleData.sort((a,b) => parseInt(a.Rating) - parseInt(b.Rating))
   const nextDisabled = formatISODate(new Date()) === leaderboardsTo || new Date(leaderboardsTo) > new Date()
-
-  useEffect(() => {
-    if (!isLoading && !isInit) {
-      const initResults = puzzles.map(puzzle => {
-        const result = puzzle.solved[user.id]
-        if (result === true || result === false) {
-          return result
-        }
-      }).filter(r => r !== undefined)
-      setResults(initResults)
-      setPuzzleIndex(initResults.length > 4 ? 4 : initResults.length)
-      setIsInit(true)
-    }
-  }, [isLoading, puzzles, user, isInit])
 
   const fen = isLoading ? "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" : puzzles[puzzleIndex].FEN
   const moves = isLoading ? "" : puzzles[puzzleIndex].Moves
@@ -133,170 +115,125 @@ export default function Home() {
   }
 
   return (
-    <>
-      <Head>
-        <title>Puzzler</title>
-        <meta name="description" content="A Puzzle Contest for you and your friends" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <Box pb={70} pos="relative" mih="100vh">
-        <main>
-          <Card w="100%" withBorder shadow="sm" p="xs">
-            <Box maw={960} m="0 auto" w="100%" px={{ base: 'xs', sm: 'md' }}>
-              <Flex justify="space-between" align="center">
-                <Link href="/" style={{ color: '#000', textDecoration: 'none' }}>
-                  <Title order={1} size="h3">Puzzler</Title>
-                </Link>
+    <Layout>
+      <Flex justify="space-between" gap="md" direction={{ base: "column", sm: "row"}} >
+        <Box pos="relative" w="100%" maw={{ base: "100%", sm: 450 }}>
+          <LoadingOverlay visible={isLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+          <PuzzleBoard
+            fen={fen}
+            moves={moves}
+            gameUrl={gameUrl}
+            setSuccess={setSuccess}
+            goNext={() => {
+              refetchLeaderboards()
+              setPuzzleIndex(puzzleIndex+1)}
+            }
+            success={results[puzzleIndex]}
+            isLast={puzzleIndex === 4}
+          />
+        </Box>
 
-                <Flex align="center">
-                  <Flex display={{ base: 'none', sm: 'flex' }} gap={{ base: 'xs' }} wrap="wrap" mr="md">
-                    <ResultChip result={results[0]} active={puzzleIndex === 0}>&gt; 1200</ResultChip>
-                    <ResultChip result={results[1]} active={puzzleIndex === 1}>&gt; 1400</ResultChip>
-                    <ResultChip result={results[2]} active={puzzleIndex === 2}>&gt; 1600</ResultChip>
-                    <ResultChip result={results[3]} active={puzzleIndex === 3}>&gt; 1800</ResultChip>
-                    <ResultChip result={results[4]} active={puzzleIndex === 4}>&gt; 2000</ResultChip>
-                  </Flex>
+        <Box w="100%" maw={{ base: "100%", sm: 450 }}>
+          <Card withBorder shadow="sm" w="100%">
+            <Tabs value={activeTab} onChange={handleTabChange} variant="pills" mb="sm">
+              <Tabs.List grow>
+                <Tabs.Tab value="day">
+                  Today
+                </Tabs.Tab>
+                <Tabs.Tab value="week">
+                  Week
+                </Tabs.Tab>
+                <Tabs.Tab value="month">
+                  Month
+                </Tabs.Tab>
+                <Tabs.Tab value="allTime">
+                  All Time
+                </Tabs.Tab>
+              </Tabs.List>
+            </Tabs>
 
-                  <Flex display={{ base: 'flex', sm: 'none' }} gap={{ base: 'xs' }} wrap="wrap" mr="md">
-                    <ResultChip result={results[0]} active={puzzleIndex === 0}>&nbsp;</ResultChip>
-                    <ResultChip result={results[1]} active={puzzleIndex === 1}>&nbsp;</ResultChip>
-                    <ResultChip result={results[2]} active={puzzleIndex === 2}>&nbsp;</ResultChip>
-                    <ResultChip result={results[3]} active={puzzleIndex === 3}>&nbsp;</ResultChip>
-                    <ResultChip result={results[4]} active={puzzleIndex === 4}>&nbsp;</ResultChip>
-                  </Flex>
-                  <AccountHandler {...{ user, setResults, setPuzzleIndex }} />
-                </Flex>
-              </Flex>
-            </Box>
-          </Card>
-          <Box maw={960} w="100%" mt="xl" mx="auto" px="md">
-            <Flex justify="space-between" gap="md" direction={{ base: "column", sm: "row"}} >
-              <Box pos="relative" w="100%" maw={{ base: "100%", sm: 450 }}>
-                <LoadingOverlay visible={isLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
-                <PuzzleBoard
-                  fen={fen}
-                  moves={moves}
-                  gameUrl={gameUrl}
-                  setSuccess={setSuccess}
-                  goNext={() => {
-                    refetchLeaderboards()
-                    setPuzzleIndex(puzzleIndex+1)}
-                  }
-                  success={results[puzzleIndex]}
-                  isLast={puzzleIndex === 4}
-                />
-              </Box>
-
-              <Box w="100%" maw={{ base: "100%", sm: 450 }}>
-                <Card withBorder shadow="sm" w="100%">
-                  <Tabs value={activeTab} onChange={handleTabChange} variant="pills" mb="sm">
-                    <Tabs.List grow>
-                      <Tabs.Tab value="day">
-                        Today
-                      </Tabs.Tab>
-                      <Tabs.Tab value="week">
-                        Week
-                      </Tabs.Tab>
-                      <Tabs.Tab value="month">
-                        Month
-                      </Tabs.Tab>
-                      <Tabs.Tab value="allTime">
-                        All Time
-                      </Tabs.Tab>
-                    </Tabs.List>
-                  </Tabs>
-
-                  <Flex>
-                    { activeTab !== 'allTime' && <ActionIcon variant="light" aria-label="go time back" onClick={() => navigateLeaderboards('prev')}>
-                      <IconArrowBigLeftLine style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                    </ActionIcon> }
-                    <Text fw={200} opacity={0.5} mb="sm" mx="md">{dateDisplay}</Text>
-                    { activeTab !== 'allTime' && <ActionIcon variant="light" aria-label="go time next" onClick={() => navigateLeaderboards('next')} disabled={nextDisabled}>
-                      <IconArrowBigRightLine style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                    </ActionIcon> }
-                  </Flex>
-
-                  <Box pos="relative">
-                    <LoadingOverlay visible={isTableLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
-                    <Table>
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th></Table.Th>
-                          <Table.Th>Player</Table.Th>
-                          <Table.Th>Points</Table.Th>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        { isTableLoading && <>
-                          <Table.Tr></Table.Tr>
-                          <Table.Tr></Table.Tr>
-                          <Table.Tr></Table.Tr>
-                        </> }
-                        { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => (
-                          <Table.Tr key={u.id}>
-                            <Table.Td>{index+1}.</Table.Td>
-                            <Table.Td>
-                              { user && user.id === u.id && <Text c="green" fw={600}>
-                                {u.name || 'Anonym'}
-                              </Text> }
-                              { (!user || (user.id !== u.id)) && <>
-                                {(details && details.length)
-                                  ? <Popover width={200} withArrow shadow="md" arrowPosition="side">
-                                    <Popover.Target>
-                                      <Text c="blue" style={{ cursor: 'pointer' }}>{u.name || 'Anonym'}</Text>
-                                    </Popover.Target>
-                                    <Popover.Dropdown>
-                                      <Flex justify="center">
-                                        {details
-                                          .sort((a, b) => parseInt(a.Rating) - parseInt(b.Rating))
-                                          .map(p => {
-                                            const result = p.solved[u.id]
-                                            return <Badge
-                                              key={`${u.id}-${p._id}`}
-                                              circle
-                                              color={result === true ? "green" : result === undefined ? "blue" : "red"}
-                                              variant={result === undefined ? "outline" : "filled" }
-                                              size="xs"
-                                              mr="sm"
-                                            >
-                                              {/*  */}
-                                            </Badge>
-                                          })
-                                        }
-                                      </Flex>
-                                    </Popover.Dropdown>
-                                  </Popover>
-                                : <Text>
-                                  {u.name || 'Anonym'}
-                                </Text> }
-                              </> }
-                            </Table.Td>
-                            <Table.Td>{u.solved}</Table.Td>
-                          </Table.Tr>)
-                        )}
-                      </Table.Tbody>
-                    </Table>
-                  </Box>
-                </Card>
-              </Box>
+            <Flex>
+              { activeTab !== 'allTime' && <ActionIcon variant="light" aria-label="go time back" onClick={() => navigateLeaderboards('prev')}>
+                <IconArrowBigLeftLine style={{ width: '70%', height: '70%' }} stroke={1.5} />
+              </ActionIcon> }
+              <Text fw={200} opacity={0.5} mb="sm" mx="md">{dateDisplay}</Text>
+              { activeTab !== 'allTime' && <ActionIcon variant="light" aria-label="go time next" onClick={() => navigateLeaderboards('next')} disabled={nextDisabled}>
+                <IconArrowBigRightLine style={{ width: '70%', height: '70%' }} stroke={1.5} />
+              </ActionIcon> }
             </Flex>
-          </Box>
-        </main>
-        <footer>
-          <Card w="100%" withBorder shadow="sm" p="xs" pos="absolute" bottom={0} left={0}>
-            <Box maw={960} m="0 auto" w="100%" px={{ base: 'xs', sm: 'md' }}>
-              <Flex justify="space-between">
-                <span>Created by <a href="https://bsky.app/profile/vincentwill.com">@vincentwill</a></span>
 
-                <Flex>
-                  <Link href="/privacy">Privacy</Link>
-                </Flex>
-              </Flex>
+            <Box pos="relative">
+              <LoadingOverlay visible={isTableLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+              <Table>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th></Table.Th>
+                    <Table.Th>Player</Table.Th>
+                    <Table.Th>Points</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  { isTableLoading && <>
+                    <Table.Tr></Table.Tr>
+                    <Table.Tr></Table.Tr>
+                    <Table.Tr></Table.Tr>
+                  </> }
+                  { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => (
+                    (user.id === u.id || u.name) && <Table.Tr key={u.id}>
+                      <Table.Td>{index+1}.</Table.Td>
+                      <Table.Td>
+                        { user && user.id === u.id && <Flex gap="xs">
+                          <Text c="green" fw={600}>
+                            {u.name || 'You'}
+                          </Text>
+                          { !u.name && <Text><a href="#" onClick={e => {
+                            e.preventDefault()
+                            setLoginModalOpen(true)
+                          }}>(Sign-up | Login)</a></Text> }
+                        </Flex>}
+                        { }
+                        { (user.id !== u.id && u.name) && <>
+                          <Popover width={200} withArrow shadow="md" arrowPosition="side">
+                            <Popover.Target>
+                              <Text c="blue" style={{ cursor: 'pointer' }}>{u.name}</Text>
+                            </Popover.Target>
+                            <Popover.Dropdown>
+                              { details && details.length &&
+                                <Flex justify="center" mb="sm">
+                                  {details
+                                    .sort((a, b) => parseInt(a.Rating) - parseInt(b.Rating))
+                                    .map(p => {
+                                      const result = p.solved[u.id]
+                                      return <Badge
+                                        key={`${u.id}-${p._id}`}
+                                        circle
+                                        color={result === true ? "green" : result === undefined ? "blue" : "red"}
+                                        variant={result === undefined ? "outline" : "filled" }
+                                        size="xs"
+                                        mr="sm"
+                                      >
+                                        {/*  */}
+                                      </Badge>
+                                    })
+                                  }
+                                </Flex>
+                              }
+                              <Text align="center">
+                                <Link href={`/u/${u.name}`}>Visit Profile</Link>
+                              </Text>
+                            </Popover.Dropdown>
+                          </Popover>
+                        </> }
+                      </Table.Td>
+                      <Table.Td>{u.solved}</Table.Td>
+                    </Table.Tr>)
+                  )}
+                </Table.Tbody>
+              </Table>
             </Box>
           </Card>
-        </footer>
-      </Box>
-    </>
+        </Box>
+      </Flex>
+    </Layout>
   );
 }

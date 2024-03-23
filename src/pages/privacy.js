@@ -1,6 +1,7 @@
 import React from 'react'
 import Link from "next/link";
 import { Box, Text, Paper, Card, Flex, Title } from '@mantine/core'
+import Footer from "@/components/Footer";
 
 const Privacy = () => {
   return <Box pb={70} pos="relative" mih="100vh">
@@ -221,19 +222,7 @@ const Privacy = () => {
       </main>
     </Box>
 
-    <footer>
-      <Card w="100%" withBorder shadow="sm" p="xs" pos="absolute" bottom={0} left={0}>
-        <Box maw={960} m="0 auto" w="100%" px={{ base: 'xs', sm: 'md' }}>
-          <Flex justify="space-between">
-            <span>Created by <a href="https://bsky.app/profile/vincentwill.com">@vincentwill</a></span>
-
-            <Flex>
-              <Link href="/privacy">Privacy</Link>
-            </Flex>
-          </Flex>
-        </Box>
-      </Card>
-    </footer>
+    <Footer />
   </Box>
 }
 

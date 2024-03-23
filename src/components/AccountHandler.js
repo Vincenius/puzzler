@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
 import useSWR, { useSWRConfig }  from 'swr'
 import { Text, Tabs, NavLink, Modal, TextInput, PasswordInput, Button, Menu, Image, Divider } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
 import { fetcher } from "@/utils/fetcher";
+import { useRouter } from 'next/router';
+import { useLoginModalOpen } from '@/stores/useLoginModalOpen'
+import Link from 'next/link';
 
 const LichessButton = () => {
   return <Button
@@ -16,9 +18,12 @@ const LichessButton = () => {
 
 const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
   const { mutate } = useSWRConfig()
+  const router = useRouter()
   const { data: puzzleData } = useSWR('/api/puzzles', fetcher)
   const puzzles = puzzleData && puzzleData.sort((a,b) => parseInt(a.Rating) - parseInt(b.Rating))
-  const [opened, { open, close }] = useDisclosure(false);
+  const loginModalOpen = useLoginModalOpen(state => state.isOpen)
+  const setLoginModalOpen = useLoginModalOpen(state => state.setIsOpen)
+
   const [error, setError] = useState('')
   const [userLoading, setUserLoading] = useState(false);
   const [pwaModalOpen, setPwaModalOpen] = useState(false);
@@ -47,7 +52,7 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
         mutate('/api/users')
         refetchLeaderboards()
         setError('')
-        close()
+        setLoginModalOpen(false)
         setPwaModalOpen(true)
       } else {
         setError(res.msg)
@@ -82,7 +87,7 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
         }).filter(r => r !== undefined)
         setResults(initResults)
         setPuzzleIndex(initResults.length > 4 ? 4 : initResults.length)
-        close()
+        setLoginModalOpen(false)
       } else {
         setError(res.msg)
       }
@@ -107,15 +112,18 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
           <NavLink component="button" label={user.name} w="auto" active variant="subtle" size="sm" />
         </Menu.Target>
         <Menu.Dropdown>
-        <Menu.Item onClick={logout}>
-          Logout
-        </Menu.Item>
+          <Menu.Item component={Link} href={`/u/${user.name}`}>
+            Profile
+          </Menu.Item>
+          <Menu.Item onClick={logout}>
+            Logout
+          </Menu.Item>
         </Menu.Dropdown>
       </Menu>
-      : <NavLink component="button" label="Anmelden" w="auto" active variant="subtle" onClick={open} />
+      : <NavLink component="button" label="Sign In" w="auto" active variant="light" onClick={() => setLoginModalOpen(true)} />
     }
-    <Modal opened={opened} onClose={() => {
-      close()
+    <Modal opened={loginModalOpen} onClose={() => {
+      setLoginModalOpen(false)
       setError('')
     }}>
       <Tabs defaultValue="login" variant="outline" onChange={() => setError('')}>
