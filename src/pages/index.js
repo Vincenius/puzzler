@@ -178,8 +178,8 @@ export default function Home() {
                     <Table.Tr></Table.Tr>
                     <Table.Tr></Table.Tr>
                   </> }
-                  { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => (
-                    (user.id === u.id || u.name) && <Table.Tr key={u.id}>
+                  { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => <>
+                    { u.name && <Table.Tr key={u.id}>
                       <Table.Td>{index+1}.</Table.Td>
                       <Table.Td>
                         { user && user.id === u.id && <Flex gap="xs">
@@ -191,8 +191,7 @@ export default function Home() {
                             setLoginModalOpen(true)
                           }}>(Sign-up | Login)</a></Text> }
                         </Flex>}
-                        { }
-                        { (user.id !== u.id && u.name) && <>
+                        { (user && user.id !== u.id && u.name) && <>
                           <Popover width={200} withArrow shadow="md" arrowPosition="side">
                             <Popover.Target>
                               <Text c="blue" style={{ cursor: 'pointer' }}>{u.name}</Text>
@@ -226,8 +225,25 @@ export default function Home() {
                         </> }
                       </Table.Td>
                       <Table.Td>{u.solved}</Table.Td>
-                    </Table.Tr>)
-                  )}
+                    </Table.Tr> }
+
+                    {!u.name && <Table.Tr key={u.id}>
+                      <Table.Td>{index+1}.</Table.Td>
+                      <Table.Td>
+                        { user && user.id === u.id && <Flex gap="xs">
+                          <Text c="green" fw={600}>
+                            {u.name || 'Anonym'}
+                          </Text>
+                        </Flex> }
+                        { !user || user.id !== u.id && <Flex gap="xs">
+                          <Text>
+                            {u.name || 'Anonym'}
+                          </Text>
+                        </Flex>}
+                      </Table.Td>
+                      <Table.Td>{u.solved}</Table.Td>
+                    </Table.Tr> }
+                  </> )}
                 </Table.Tbody>
               </Table>
             </Box>
