@@ -14,6 +14,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
   const [moveCount, setMoveCount] = useState(1)
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
   const [rightClickedSquares, setRightClickedSquares] = useState({});
+  const [boardOrientation, setBoardOrientation] = useState('white');
   const [optionSquares, setOptionSquares] = useState({});
   const parsedMoves = parseMoves(moves)
 
@@ -24,6 +25,13 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
   useEffect(() => {
     if (!game || fen !== initFen) {
       const initGame = new Chess(fen)
+      const enemyColor = initGame.turn()
+
+      if (enemyColor === 'w') {
+        setBoardOrientation('black')
+      } else {
+        setBoardOrientation('white')
+      }
       setInitFen(fen)
       setGame(initGame)
     }
@@ -313,6 +321,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
         showPromotionDialog={showPromotionDialog}
         arePiecesDraggable={!isDone}
         width="100%"
+        boardOrientation={boardOrientation}
       />
       <Flex
         justify={{ sm: 'center' }}
