@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import Head from "next/head";
 import Link from "next/link";
 import useSWR  from 'swr'
-import { useDisclosure } from '@mantine/hooks';
 import AccountHandler from "@/components/AccountHandler";
 import ResultChip from "@/components/ResultChip";
 import Footer from "@/components/Footer";
@@ -21,7 +20,6 @@ const Layout = ({ children }) => {
   const [isInit, setIsInit] = useState(false)
   const { data: puzzles, isLoading: isPuzzleLoading } = useSWR('/api/puzzles', fetcher)
   const { data: user, isLoading: isUserLoading } = useSWR('/api/users', fetcher)
-  const [opened, { open, close }] = useDisclosure(false); // login modal // todo move to zustand state
   const isLoading = isPuzzleLoading || isUserLoading
 
   useEffect(() => {
@@ -56,22 +54,29 @@ const Layout = ({ children }) => {
               </Link>
 
               <Flex align="center">
-                <Flex display={{ base: 'none', sm: 'flex' }} gap={{ base: 'xs' }} wrap="wrap" mr="md">
-                  <ResultChip result={results[0]} active={puzzleIndex === 0}>&gt; 1200</ResultChip>
-                  <ResultChip result={results[1]} active={puzzleIndex === 1}>&gt; 1400</ResultChip>
-                  <ResultChip result={results[2]} active={puzzleIndex === 2}>&gt; 1600</ResultChip>
-                  <ResultChip result={results[3]} active={puzzleIndex === 3}>&gt; 1800</ResultChip>
-                  <ResultChip result={results[4]} active={puzzleIndex === 4}>&gt; 2000</ResultChip>
+                <Flex display="flex" gap={{ base: 'xs' }} wrap="wrap" mr="md">
+                  <ResultChip result={results[0]} active={puzzleIndex === 0} index={0} results={results}>
+                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 1200</Box>
+                    <Box display={{ base: 'inline', sm: 'none' }}>&nbsp;</Box>
+                  </ResultChip>
+                  <ResultChip result={results[1]} active={puzzleIndex === 1} index={1} results={results}>
+                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 1400</Box>
+                    <Box display={{ base: 'inline', sm: 'none' }}>&nbsp;</Box>
+                  </ResultChip>
+                  <ResultChip result={results[2]} active={puzzleIndex === 2} index={2} results={results}>
+                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 1600</Box>
+                    <Box display={{ base: 'inline', sm: 'none' }}>&nbsp;</Box>
+                  </ResultChip>
+                  <ResultChip result={results[3]} active={puzzleIndex === 3} index={3} results={results}>
+                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 1800</Box>
+                    <Box display={{ base: 'inline', sm: 'none' }}>&nbsp;</Box>
+                  </ResultChip>
+                  <ResultChip result={results[4]} active={puzzleIndex === 4} index={4} results={results}>
+                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 2000</Box>
+                    <Box display={{ base: 'inline', sm: 'none' }}>&nbsp;</Box>
+                  </ResultChip>
                 </Flex>
-
-                <Flex display={{ base: 'flex', sm: 'none' }} gap={{ base: 'xs' }} wrap="wrap" mr="md">
-                  <ResultChip result={results[0]} active={puzzleIndex === 0}>&nbsp;</ResultChip>
-                  <ResultChip result={results[1]} active={puzzleIndex === 1}>&nbsp;</ResultChip>
-                  <ResultChip result={results[2]} active={puzzleIndex === 2}>&nbsp;</ResultChip>
-                  <ResultChip result={results[3]} active={puzzleIndex === 3}>&nbsp;</ResultChip>
-                  <ResultChip result={results[4]} active={puzzleIndex === 4}>&nbsp;</ResultChip>
-                </Flex>
-                <AccountHandler {...{ user, setResults, setPuzzleIndex, opened, open, close }} />
+                <AccountHandler {...{ user, setResults, setPuzzleIndex }} />
               </Flex>
             </Flex>
           </Box>
