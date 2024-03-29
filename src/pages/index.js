@@ -1,8 +1,10 @@
 import useSWR, { useSWRConfig }  from 'swr'
 import PuzzleBoard from "@/components/Chessboard";
 import Layout from "@/components/Layout";
+import { notifications } from '@mantine/notifications';
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from 'next/router';
+import { useState, useEffect } from "react";
 import { Flex, Badge, Box, LoadingOverlay, Card, Text, Tabs, Table, ActionIcon, Popover } from '@mantine/core';
 import { formatDate, getBeginningOfWeek, getEndOfWeek, getMonthDate, getDayAfter, formatISODate, getDayBefore, getFirstDayOfMonth, getLastDayOfMonth } from "@/utils/dateHelper";
 import { fetcher } from "@/utils/fetcher";
@@ -22,8 +24,8 @@ function transformURL(url) {
 }
 
 export default function Home() {
-  // TODO read url param (success=true | false) and show notification and setLoginModalOpen(false)
   const { mutate } = useSWRConfig()
+  const router = useRouter();
   const puzzleIndex = usePuzzleIndexStore(state => state.puzzleIndex)
   const setPuzzleIndex = usePuzzleIndexStore(state => state.setPuzzleIndex)
   const results = useResultsStore(state => state.results)
@@ -43,6 +45,33 @@ export default function Home() {
   const fen = isLoading ? "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" : puzzles[puzzleIndex].FEN
   const moves = isLoading ? "" : puzzles[puzzleIndex].Moves
   const gameUrl = isLoading ? "" : transformURL(puzzles[puzzleIndex].GameUrl)
+
+  useEffect(() => {
+    const { success } = router.query;
+
+    if (success !== undefined) {
+      if (success === 'true') {
+        notifications.show({
+          title: 'Success',
+          message: 'Successfully logged in! 🥳',
+          autoClose: 3000,
+          color: 'green',
+        })
+      } else if (success === 'false') {
+        notifications.show({
+          title: 'Error',
+          message: 'Could not login in...',
+          autoClose: 3000,
+          color: 'red',
+        })
+      }
+
+      // Remove query parameter from URL
+      const { pathname, query, asPath } = router;
+      delete query.success;
+      router.replace({ pathname, query }, undefined, { shallow: true });
+    }
+  });
 
   const refetchLeaderboards = () => {
     mutate(

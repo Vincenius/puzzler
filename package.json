@@ -12,6 +12,7 @@
   "dependencies": {
     "@mantine/core": "^7.5.0",
     "@mantine/hooks": "^7.5.0",
+    "@mantine/notifications": "^7.7.0",
     "@tabler/icons-react": "^2.46.0",
     "chess.js": "^0.13.1",
     "crypto": "^1.0.1",
