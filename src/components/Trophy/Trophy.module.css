@@ -1,0 +1,9 @@
+.gold {
+  filter: drop-shadow(2px 2px 3px #cdcd32)
+}
+.silver {
+  filter: drop-shadow(2px 2px 3px #a7a7a7)
+}
+.bronze {
+  filter: drop-shadow(2px 2px 3px #cd7f32)
+}

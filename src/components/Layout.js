@@ -3,6 +3,7 @@ import Head from "next/head";
 import Link from "next/link";
 import useSWR  from 'swr'
 import AccountHandler from "@/components/AccountHandler";
+import TrophyInfoModal from "@/components/Trophy/InfoModal";
 import ResultChip from "@/components/ResultChip";
 import Footer from "@/components/Footer";
 import { Flex, Box, Card, Title } from '@mantine/core';
@@ -86,6 +87,8 @@ const Layout = ({ children }) => {
         </Box>
       </main>
       <Footer />
+
+      <TrophyInfoModal />
     </Box>
   </>
 }

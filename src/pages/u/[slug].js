@@ -5,6 +5,7 @@ import { Title, Text, Table, Flex } from '@mantine/core';
 import { fetcher } from "@/utils/fetcher";
 import Calendar from "@/components/Calendar/Calendar";
 import ResultChip from "@/components/ResultChip";
+import Trophy from "@/components/Trophy/Trophy";
 
 export default function Page() {
   const router = useRouter()
@@ -55,18 +56,21 @@ export default function Page() {
   }
 
   return <Layout>
-    <Title order={2} size="h1" mb="lg">{router.query.slug}</Title>
+    <Flex justify="space-between">
+      <Title order={2} size="h1" mb="lg">{router.query.slug}</Title>
+      {!isProfileLoading && (profile?.user?.trophies || [].length) && <Flex>
+        {profile.user.trophies.map(t => <span key={t.description}><Trophy { ...t } /></span>)}
+      </Flex>}
+    </Flex>
 
-    {/* todo loading */}
+    {/* todo improved loading screen */}
     {isProfileLoading && <Text>Loading...</Text>}
 
     {!isProfileLoading && !profile?.user?.name && <Title order={3} size="h3">User could not be found...</Title>}
     {!isProfileLoading && profile?.user?.name && <>
       <Calendar puzzles={profile.puzzles} userId={profile.user._id} />
 
-      {/* puzzle table sort by date, show solved & failed, fill up to 5 badges*/
-        renderPuzzleTable(profile.puzzles)
-      }
+      { renderPuzzleTable(profile.puzzles) }
     </>}
   </Layout>
 }
