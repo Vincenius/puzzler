@@ -6,7 +6,7 @@ import { IconArrowBigLeftLine, IconArrowBigRightLine, IconMicroscope, IconDots, 
 
 const parseMoves = moves => moves.split(' ').map(move => ({ from: move.slice(0,2), to: move.slice(2,4), promotion: move.slice(4,5) }));
 
-export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, gameUrl, isLast }) {
+export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, isLast }) {
   const [initFen, setInitFen] = useState(fen);
   const [game, setGame] = useState();
   const [moveFrom, setMoveFrom] = useState("");
@@ -21,6 +21,9 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
   const totalMoves = parsedMoves.length
   const gameLength = game ? game.history().length : 0
   const isDone = totalMoves === gameLength
+  const gameFen = game ? game.fen() : ''
+  const gameColor = (new Chess(fen).turn()) === 'b' ? 'white' : 'black'
+  const gameUrl = `https://lichess.org/analysis/${encodeURI(gameFen)}?color=${gameColor}`
 
   useEffect(() => {
     if (!game || fen !== initFen) {
@@ -130,8 +133,18 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
   }
 
   function handlePuzzleMove(moveFrom, square, promotion) {
+    const tmpGame = { ...game }
+    tmpGame.move({
+      from: moveFrom,
+      to: square,
+      promotion: promotion,
+    });
+
     const solution = parsedMoves[moveCount];
-    if (moveFrom === solution.from && square === solution.to && promotion === solution.promotion) {
+    // same as puzzle move or checkmate
+    const isCorrect = (moveFrom === solution.from && square === solution.to && promotion === solution.promotion)
+      || (tmpGame.in_checkmate())
+    if (isCorrect) {
       const nextMoveCount = moveCount + 1;
       const nextMove = parsedMoves[nextMoveCount]
       if (!nextMove) {
