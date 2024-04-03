@@ -207,8 +207,8 @@ export default function Home() {
                     <Table.Tr></Table.Tr>
                     <Table.Tr></Table.Tr>
                   </> }
-                  { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => <>
-                    { u.name && <Table.Tr key={u.id}>
+                  { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => <Table.Tr key={u.id}>
+                    { u.name && <>
                       <Table.Td>{index+1}.</Table.Td>
                       <Table.Td>
                         { user && user.id === u.id && <Flex gap="xs">
@@ -254,9 +254,9 @@ export default function Home() {
                         </> }
                       </Table.Td>
                       <Table.Td>{u.solved}</Table.Td>
-                    </Table.Tr> }
+                    </> }
 
-                    {!u.name && <Table.Tr key={u.id}>
+                    {!u.name && <>
                       <Table.Td>{index+1}.</Table.Td>
                       <Table.Td>
                         { user && user.id === u.id && <Flex gap="xs">
@@ -271,8 +271,8 @@ export default function Home() {
                         </Flex>}
                       </Table.Td>
                       <Table.Td>{u.solved}</Table.Td>
-                    </Table.Tr> }
-                  </> )}
+                    </> }
+                  </Table.Tr> )}
                 </Table.Tbody>
               </Table>
             </Box>
