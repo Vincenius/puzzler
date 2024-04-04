@@ -143,6 +143,9 @@ export default function Home() {
     setLeaderboardsTo(formatISODate(newTo))
   }
 
+  let prevPoints = null;
+  let rank = 0;
+
   return (
     <Layout>
       <Flex justify="space-between" gap="md" direction={{ base: "column", sm: "row"}} >
@@ -207,9 +210,15 @@ export default function Home() {
                     <Table.Tr></Table.Tr>
                     <Table.Tr></Table.Tr>
                   </> }
-                  { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => <Table.Tr key={u.id}>
+                  { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => {
+                    if (u.solved !== prevPoints) {
+                      rank = index + 1;
+                    }
+                    prevPoints = u.solved; // Update previous points for the next iteration
+
+                    return <Table.Tr key={u.id}>
                     { u.name && <>
-                      <Table.Td>{index+1}.</Table.Td>
+                      <Table.Td>{rank}.</Table.Td>
                       <Table.Td>
                         { user && user.id === u.id && <Flex gap="xs">
                           <Text c="green" fw={600}>
@@ -257,7 +266,7 @@ export default function Home() {
                     </> }
 
                     {!u.name && <>
-                      <Table.Td>{index+1}.</Table.Td>
+                      <Table.Td>{rank}.</Table.Td>
                       <Table.Td>
                         { user && user.id === u.id && <Flex gap="xs">
                           <Text c="green" fw={600}>
@@ -272,7 +281,7 @@ export default function Home() {
                       </Table.Td>
                       <Table.Td>{u.solved}</Table.Td>
                     </> }
-                  </Table.Tr> )}
+                  </Table.Tr> } )}
                 </Table.Tbody>
               </Table>
             </Box>

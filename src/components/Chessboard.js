@@ -35,6 +35,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
       } else {
         setBoardOrientation('white')
       }
+      setMoveCount(1)
       setInitFen(fen)
       setGame(initGame)
     }
@@ -141,13 +142,14 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
     });
 
     const solution = parsedMoves[moveCount];
+    console.log(moveCount, moveFrom, solution.from, square, solution.to, tmpGame.in_checkmate())
     // same as puzzle move or checkmate
     const isCorrect = (moveFrom === solution.from && square === solution.to && promotion === solution.promotion)
       || (tmpGame.in_checkmate())
     if (isCorrect) {
       const nextMoveCount = moveCount + 1;
       const nextMove = parsedMoves[nextMoveCount]
-      if (!nextMove) {
+      if (!nextMove || tmpGame.in_checkmate()) {
         handleSuccess(true)
         highlightMove(moveFrom, square)
       } else {
