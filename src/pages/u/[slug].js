@@ -81,8 +81,6 @@ export default function Page() {
     }
   }, [{ name: 'Solved', value: 0 }, { name: 'Failed', value: 0 }])
 
-  console.log(chartData)
-
   return <Layout>
     <Flex justify="space-between">
       <Title order={2} size="h1" mb="lg">{router.query.slug}</Title>
