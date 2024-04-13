@@ -17,6 +17,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
   const [boardOrientation, setBoardOrientation] = useState('white');
   const [optionSquares, setOptionSquares] = useState({});
   const [autoFirstMove, setAutoFirstMove] = useState(false)
+  const [firstMoveFen, setFirstMoveFen] = useState(fen) // will be updated to after first move
   const parsedMoves = parseMoves(moves);
 
   const totalMoves = parsedMoves.length
@@ -24,7 +25,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
   const isDone = totalMoves === gameLength
   const gameFen = game ? game.fen() : ''
   const gameColor = (new Chess(fen).turn()) === 'b' ? 'white' : 'black'
-  const gameUrl = `https://lichess.org/analysis/${encodeURI(gameFen)}?color=${gameColor}`
+  const gameUrl = `https://lichess.org/analysis/${encodeURI(firstMoveFen)}?color=${gameColor}`
 
   useEffect(() => {
     if (!game || fen !== initFen) {
@@ -46,13 +47,14 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
   useEffect(() => {
     if (game && game.fen() === fen && moves && autoFirstMove) {
       setAutoFirstMove(false)
+      const gameCopy = { ...game };
+      gameCopy.move({
+        from: parsedMoves[0].from,
+        to: parsedMoves[0].to,
+        promotion: parsedMoves[0].promotion
+      });
+      setFirstMoveFen(gameCopy.fen())
       setTimeout(() => {
-        const gameCopy = { ...game };
-        gameCopy.move({
-          from: parsedMoves[0].from,
-          to: parsedMoves[0].to,
-          promotion: parsedMoves[0].promotion
-        });
         setGame(gameCopy)
         highlightMove(parsedMoves[0].from, parsedMoves[0].to)
       }, 750)
