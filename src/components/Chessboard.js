@@ -11,12 +11,13 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
   const [game, setGame] = useState();
   const [moveFrom, setMoveFrom] = useState("");
   const [moveTo, setMoveTo] = useState(null);
-  const [moveCount, setMoveCount] = useState(1)
+  const [moveCount, setMoveCount] = useState(1);
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
   const [rightClickedSquares, setRightClickedSquares] = useState({});
   const [boardOrientation, setBoardOrientation] = useState('white');
   const [optionSquares, setOptionSquares] = useState({});
-  const parsedMoves = parseMoves(moves)
+  const [autoFirstMove, setAutoFirstMove] = useState(false)
+  const parsedMoves = parseMoves(moves);
 
   const totalMoves = parsedMoves.length
   const gameLength = game ? game.history().length : 0
@@ -38,11 +39,13 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
       setMoveCount(1)
       setInitFen(fen)
       setGame(initGame)
+      setAutoFirstMove(true)
     }
   }, [fen, initFen, game])
 
   useEffect(() => {
-    if (game && game.fen() === fen && moves && success === undefined) {
+    if (game && game.fen() === fen && moves && autoFirstMove) {
+      setAutoFirstMove(false)
       setTimeout(() => {
         const gameCopy = { ...game };
         gameCopy.move({
@@ -54,7 +57,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
         highlightMove(parsedMoves[0].from, parsedMoves[0].to)
       }, 750)
     }
-  }, [fen, moves, game, parsedMoves, success])
+  }, [fen, moves, game, parsedMoves, autoFirstMove])
 
   const highlightMove = (from, to) => {
     const colour = "rgba(155,199,0,.41)"
@@ -142,7 +145,6 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
     });
 
     const solution = parsedMoves[moveCount];
-    console.log(moveCount, moveFrom, solution.from, square, solution.to, tmpGame.in_checkmate())
     // same as puzzle move or checkmate
     const isCorrect = (moveFrom === solution.from && square === solution.to && promotion === solution.promotion)
       || (tmpGame.in_checkmate())
@@ -219,6 +221,11 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
   function onSquareClick(square) {
     // setRightClickedSquares({});
 
+    // don't allow moves if already solved
+    if (game.history().length < moveCount) {
+      return
+    }
+
     // from square
     if (!moveFrom) {
       const hasMoveOptions = getMoveOptions(square);
@@ -290,6 +297,11 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
   }
 
   function onDrop(moveFrom, square) {
+    // don't allow moves if already solved
+    if (game.history().length < moveCount) {
+      return false
+    }
+
     setMoveFrom("")
 
     const moves = game.moves({
@@ -344,7 +356,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
         <Button
           fullWidth
           variant="default"
-          disabled={success === undefined || game.history().length === 0}
+          disabled={game.history().length === 0}
           onClick={() => safeGameMutate((game) => {
             game.undo();
             setRightClickedSquares({});
@@ -355,7 +367,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, i
         <Button
           fullWidth
           variant="default"
-          disabled={success === undefined || isDone}
+          disabled={isDone || (success === undefined && game.history().length === moveCount)}
           onClick={nextMove}
         >
           <IconArrowBigRightLine/>
