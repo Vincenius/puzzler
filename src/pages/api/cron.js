@@ -4,7 +4,7 @@ import { getFirstDayOfMonth, getLastDayOfMonth, formatISODate } from '@/utils/da
 
 export default async function handler(req, res) {
 
-  if (req.headers['x-api-key'] === process.env.API_KEY) {
+  if (req.headers.get('Authorization') === `Bearer ${process.env.CRON_SECRET}`) {
     const today = new Date();
 
     if (today.getDate() === 14) { // todo change to 1
