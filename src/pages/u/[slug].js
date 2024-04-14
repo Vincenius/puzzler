@@ -85,7 +85,9 @@ export default function Page() {
     <Flex justify="space-between">
       <Title order={2} size="h1" mb="lg">{router.query.slug}</Title>
       {!isProfileLoading && (profile?.user?.trophies || [].length > 0) && <Flex>
-        {profile.user.trophies.map(t => <span key={t.description}><Trophy { ...t } /></span>)}
+        {profile.user.trophies.map(t => <span key={t.description} style={{ marginLeft: '-15px' }}>
+          <Trophy { ...t } />
+        </span>)}
       </Flex>}
     </Flex>
 
