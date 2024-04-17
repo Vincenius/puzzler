@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     await client.connect();
     const db = client.db(process.env.MONGODB_DB);
     const accountsCollection = db.collection('accounts');
-    const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.SESSION_KEY });
+    const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.SESSION_KEY, ttl: 0 });
 
     if (req.method === 'GET') {
       let result = {}

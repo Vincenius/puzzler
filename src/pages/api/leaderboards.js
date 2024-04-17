@@ -45,7 +45,7 @@ export default async function handler(req, res) {
       const userIds = [...new Set(puzzles.map(p => Object.keys(p.solved)).flat())]
       const objectIds = userIds.map(id => ObjectId.createFromHexString(id))
       const users = await accountsCollection.find({ _id: { $in: objectIds } }).toArray();
-      const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.SESSION_KEY });
+      const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.SESSION_KEY, ttl: 0 });
       result = {
         leaderboard: users.map(u => ({
           id: u._id.toString(),

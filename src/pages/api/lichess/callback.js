@@ -3,7 +3,7 @@ import { MongoClient, ObjectId } from 'mongodb';
 import { mergeUsers } from '../users'
 
 export default async function handler(req, res) {
-  const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.OAUTH_COOKIE });
+  const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.OAUTH_COOKIE, ttl: 0 });
   const data = {
     grant_type: 'authorization_code',
     code: req.query.code,
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
     await client.connect();
     const db = client.db(process.env.MONGODB_DB);
     const accountsCollection = db.collection('accounts');
-    const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.SESSION_KEY });
+    const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.SESSION_KEY, ttl: 0 });
 
     const user = await accountsCollection.findOne({ name: username, type: 'LICHESS' })
     if (!user || !user._id) {

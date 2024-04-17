@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   const scope = 'email:read'
   const uri = `https://lichess.org/oauth?response_type=${response_type}&client_id=${client_id}&redirect_uri=${redirect_uri}&code_challenge_method=${code_challenge_method}&code_challenge=${code_challenge}&scope=${scope}`
 
-  const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.OAUTH_COOKIE });
+  const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.OAUTH_COOKIE, ttl: 0 });
   session.verifier = verifier
   await session.save()
 
