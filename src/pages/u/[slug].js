@@ -1,10 +1,27 @@
 import { useRouter } from 'next/router'
 import useSWR  from 'swr'
 import Layout from "@/components/Layout";
-import { Title, Text, Table, Flex } from '@mantine/core';
+import { Title, Text, Table, Flex, Box } from '@mantine/core';
+import { Cell, Pie, Tooltip, ResponsiveContainer, PieChart } from 'recharts';
 import { fetcher } from "@/utils/fetcher";
 import Calendar from "@/components/Calendar/Calendar";
 import ResultChip from "@/components/ResultChip";
+import Trophy from "@/components/Trophy/Trophy";
+
+const COLORS = ['#37b24d', '#f03e3e'];
+
+const RADIAN = Math.PI / 180;
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+};
 
 export default function Page() {
   const router = useRouter()
@@ -54,19 +71,59 @@ export default function Page() {
     </Table>
   }
 
-  return <Layout>
-    <Title order={2} size="h1" mb="lg">{router.query.slug}</Title>
+  const chartData = (profile?.puzzles || []).reduce((acc, curr) => {
+    if (curr.solved[profile.user._id] === true) {
+      return [{ name: 'Solved', value: acc[0].value + 1}, acc[1]]
+    } else if (curr.solved[profile.user._id] === false) {
+      return [acc[0], { name: 'Failed', value: acc[1].value + 1}]
+    } else {
+      return acc
+    }
+  }, [{ name: 'Solved', value: 0 }, { name: 'Failed', value: 0 }])
 
-    {/* todo loading */}
+  return <Layout>
+    <Flex justify="space-between">
+      <Title order={2} size="h1" mb="lg">{router.query.slug}</Title>
+      {!isProfileLoading && (profile?.user?.trophies || [].length > 0) && <Flex>
+        {profile.user.trophies.map(t => <span key={t.description} style={{ marginLeft: '-15px' }}>
+          <Trophy { ...t } />
+        </span>)}
+      </Flex>}
+    </Flex>
+
+    {/* todo improved loading screen */}
     {isProfileLoading && <Text>Loading...</Text>}
 
     {!isProfileLoading && !profile?.user?.name && <Title order={3} size="h3">User could not be found...</Title>}
     {!isProfileLoading && profile?.user?.name && <>
-      <Calendar puzzles={profile.puzzles} userId={profile.user._id} />
+      <Flex gap="md" justify="space-between" align="center" direction={{ base: 'column', sm: 'row' }}>
+        <Box>
+          <Calendar puzzles={profile.puzzles} userId={profile.user._id} />
+        </Box>
+        <Box w="200px" h="200px">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart width={400} height={400}>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={renderCustomizedLabel}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </Box>
+      </Flex>
 
-      {/* puzzle table sort by date, show solved & failed, fill up to 5 badges*/
-        renderPuzzleTable(profile.puzzles)
-      }
+      { renderPuzzleTable(profile.puzzles) }
     </>}
   </Layout>
 }

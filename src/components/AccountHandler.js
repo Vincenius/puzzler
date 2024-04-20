@@ -2,23 +2,11 @@ import React, { useState } from 'react'
 import useSWR, { useSWRConfig }  from 'swr'
 import { Text, Tabs, NavLink, Modal, TextInput, PasswordInput, Button, Menu, Image, Divider } from '@mantine/core';
 import { fetcher } from "@/utils/fetcher";
-import { useRouter } from 'next/router';
 import { useLoginModalOpen } from '@/stores/useLoginModalOpen'
 import Link from 'next/link';
 
-const LichessButton = () => {
-  return <Button
-    fullWidth my="md" variant="outline" color="black"
-    component="a"
-    href="/api/lichess/oauth"
-  >
-    Login with Lichess
-  </Button>
-}
-
 const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
   const { mutate } = useSWRConfig()
-  const router = useRouter()
   const { data: puzzleData } = useSWR('/api/puzzles', fetcher)
   const puzzles = puzzleData && puzzleData.sort((a,b) => parseInt(a.Rating) - parseInt(b.Rating))
   const loginModalOpen = useLoginModalOpen(state => state.isOpen)
@@ -137,7 +125,18 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
         </Tabs.List>
 
         <Tabs.Panel value="login">
-          <LichessButton />
+          <Button
+            fullWidth my="md" variant="outline" color="black"
+            component="a"
+            href="/api/lichess/oauth"
+            onClick={e =>{
+              e.preventDefault();
+              setLoginModalOpen(false)
+              window.location = "/api/lichess/oauth"
+            }}
+          >
+            Login with Lichess
+          </Button>
           <Divider my="xs" label="or" labelPosition="center" />
           <form onSubmit={handleLogin}>
             <TextInput name="username" label="Username" mb="sm" required />

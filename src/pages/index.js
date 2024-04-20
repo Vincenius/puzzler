@@ -1,8 +1,10 @@
 import useSWR, { useSWRConfig }  from 'swr'
 import PuzzleBoard from "@/components/Chessboard";
 import Layout from "@/components/Layout";
+import { notifications } from '@mantine/notifications';
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from 'next/router';
+import { useState, useEffect } from "react";
 import { Flex, Badge, Box, LoadingOverlay, Card, Text, Tabs, Table, ActionIcon, Popover } from '@mantine/core';
 import { formatDate, getBeginningOfWeek, getEndOfWeek, getMonthDate, getDayAfter, formatISODate, getDayBefore, getFirstDayOfMonth, getLastDayOfMonth } from "@/utils/dateHelper";
 import { fetcher } from "@/utils/fetcher";
@@ -22,8 +24,8 @@ function transformURL(url) {
 }
 
 export default function Home() {
-  // TODO read url param (success=true | false) and show notification and setLoginModalOpen(false)
   const { mutate } = useSWRConfig()
+  const router = useRouter();
   const puzzleIndex = usePuzzleIndexStore(state => state.puzzleIndex)
   const setPuzzleIndex = usePuzzleIndexStore(state => state.setPuzzleIndex)
   const results = useResultsStore(state => state.results)
@@ -43,6 +45,33 @@ export default function Home() {
   const fen = isLoading ? "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" : puzzles[puzzleIndex].FEN
   const moves = isLoading ? "" : puzzles[puzzleIndex].Moves
   const gameUrl = isLoading ? "" : transformURL(puzzles[puzzleIndex].GameUrl)
+
+  useEffect(() => {
+    const { success } = router.query;
+
+    if (success !== undefined) {
+      if (success === 'true') {
+        notifications.show({
+          title: 'Success',
+          message: 'Successfully logged in! 🥳',
+          autoClose: 3000,
+          color: 'green',
+        })
+      } else if (success === 'false') {
+        notifications.show({
+          title: 'Error',
+          message: 'Could not login in...',
+          autoClose: 3000,
+          color: 'red',
+        })
+      }
+
+      // Remove query parameter from URL
+      const { pathname, query, asPath } = router;
+      delete query.success;
+      router.replace({ pathname, query }, undefined, { shallow: true });
+    }
+  });
 
   const refetchLeaderboards = () => {
     mutate(
@@ -114,6 +143,9 @@ export default function Home() {
     setLeaderboardsTo(formatISODate(newTo))
   }
 
+  let prevPoints = null;
+  let rank = 0;
+
   return (
     <Layout>
       <Flex justify="space-between" gap="md" direction={{ base: "column", sm: "row"}} >
@@ -178,9 +210,15 @@ export default function Home() {
                     <Table.Tr></Table.Tr>
                     <Table.Tr></Table.Tr>
                   </> }
-                  { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => (
-                    (user.id === u.id || u.name) && <Table.Tr key={u.id}>
-                      <Table.Td>{index+1}.</Table.Td>
+                  { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => {
+                    if (u.solved !== prevPoints) {
+                      rank = index + 1;
+                    }
+                    prevPoints = u.solved; // Update previous points for the next iteration
+
+                    return <Table.Tr key={u.id}>
+                    { u.name && <>
+                      <Table.Td>{rank}.</Table.Td>
                       <Table.Td>
                         { user && user.id === u.id && <Flex gap="xs">
                           <Text c="green" fw={600}>
@@ -191,8 +229,7 @@ export default function Home() {
                             setLoginModalOpen(true)
                           }}>(Sign-up | Login)</a></Text> }
                         </Flex>}
-                        { }
-                        { (user.id !== u.id && u.name) && <>
+                        { (user && user.id !== u.id && u.name) && <>
                           <Popover width={200} withArrow shadow="md" arrowPosition="side">
                             <Popover.Target>
                               <Text c="blue" style={{ cursor: 'pointer' }}>{u.name}</Text>
@@ -226,8 +263,25 @@ export default function Home() {
                         </> }
                       </Table.Td>
                       <Table.Td>{u.solved}</Table.Td>
-                    </Table.Tr>)
-                  )}
+                    </> }
+
+                    {!u.name && <>
+                      <Table.Td>{rank}.</Table.Td>
+                      <Table.Td>
+                        { user && user.id === u.id && <Flex gap="xs">
+                          <Text c="green" fw={600}>
+                            {u.name || 'Anonym'}
+                          </Text>
+                        </Flex> }
+                        { !user || user.id !== u.id && <Flex gap="xs">
+                          <Text>
+                            {u.name || 'Anonym'}
+                          </Text>
+                        </Flex>}
+                      </Table.Td>
+                      <Table.Td>{u.solved}</Table.Td>
+                    </> }
+                  </Table.Tr> } )}
                 </Table.Tbody>
               </Table>
             </Box>

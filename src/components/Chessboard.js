@@ -6,43 +6,60 @@ import { IconArrowBigLeftLine, IconArrowBigRightLine, IconMicroscope, IconDots, 
 
 const parseMoves = moves => moves.split(' ').map(move => ({ from: move.slice(0,2), to: move.slice(2,4), promotion: move.slice(4,5) }));
 
-export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, gameUrl, isLast }) {
+export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, isLast }) {
   const [initFen, setInitFen] = useState(fen);
   const [game, setGame] = useState();
   const [moveFrom, setMoveFrom] = useState("");
   const [moveTo, setMoveTo] = useState(null);
-  const [moveCount, setMoveCount] = useState(1)
+  const [moveCount, setMoveCount] = useState(1);
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
   const [rightClickedSquares, setRightClickedSquares] = useState({});
+  const [boardOrientation, setBoardOrientation] = useState('white');
   const [optionSquares, setOptionSquares] = useState({});
-  const parsedMoves = parseMoves(moves)
+  const [autoFirstMove, setAutoFirstMove] = useState(false)
+  const [firstMoveFen, setFirstMoveFen] = useState(fen) // will be updated to after first move
+  const parsedMoves = parseMoves(moves);
 
   const totalMoves = parsedMoves.length
   const gameLength = game ? game.history().length : 0
   const isDone = totalMoves === gameLength
+  const gameFen = game ? game.fen() : ''
+  const gameColor = (new Chess(fen).turn()) === 'b' ? 'white' : 'black'
+  const gameUrl = `https://lichess.org/analysis/${encodeURI(firstMoveFen)}?color=${gameColor}`
 
   useEffect(() => {
     if (!game || fen !== initFen) {
       const initGame = new Chess(fen)
+      const enemyColor = initGame.turn()
+
+      if (enemyColor === 'w') {
+        setBoardOrientation('black')
+      } else {
+        setBoardOrientation('white')
+      }
+      setMoveCount(1)
       setInitFen(fen)
       setGame(initGame)
+      setAutoFirstMove(true)
     }
   }, [fen, initFen, game])
 
   useEffect(() => {
-    if (game && game.fen() === fen && moves && success === undefined) {
+    if (game && game.fen() === fen && moves && autoFirstMove) {
+      setAutoFirstMove(false)
+      const gameCopy = { ...game };
+      gameCopy.move({
+        from: parsedMoves[0].from,
+        to: parsedMoves[0].to,
+        promotion: parsedMoves[0].promotion
+      });
+      setFirstMoveFen(gameCopy.fen())
       setTimeout(() => {
-        const gameCopy = { ...game };
-        gameCopy.move({
-          from: parsedMoves[0].from,
-          to: parsedMoves[0].to,
-          promotion: parsedMoves[0].promotion
-        });
         setGame(gameCopy)
         highlightMove(parsedMoves[0].from, parsedMoves[0].to)
       }, 750)
     }
-  }, [fen, moves, game, parsedMoves, success])
+  }, [fen, moves, game, parsedMoves, autoFirstMove])
 
   const highlightMove = (from, to) => {
     const colour = "rgba(155,199,0,.41)"
@@ -122,11 +139,21 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
   }
 
   function handlePuzzleMove(moveFrom, square, promotion) {
+    const tmpGame = { ...game }
+    tmpGame.move({
+      from: moveFrom,
+      to: square,
+      promotion: promotion,
+    });
+
     const solution = parsedMoves[moveCount];
-    if (moveFrom === solution.from && square === solution.to && promotion === solution.promotion) {
+    // same as puzzle move or checkmate
+    const isCorrect = (moveFrom === solution.from && square === solution.to && promotion === solution.promotion)
+      || (tmpGame.in_checkmate())
+    if (isCorrect) {
       const nextMoveCount = moveCount + 1;
       const nextMove = parsedMoves[nextMoveCount]
-      if (!nextMove) {
+      if (!nextMove || tmpGame.in_checkmate()) {
         handleSuccess(true)
         highlightMove(moveFrom, square)
       } else {
@@ -195,6 +222,11 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
 
   function onSquareClick(square) {
     // setRightClickedSquares({});
+
+    // don't allow moves if already solved
+    if (game.history().length < moveCount) {
+      return
+    }
 
     // from square
     if (!moveFrom) {
@@ -267,6 +299,11 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
   }
 
   function onDrop(moveFrom, square) {
+    // don't allow moves if already solved
+    if (game.history().length < moveCount) {
+      return false
+    }
+
     setMoveFrom("")
 
     const moves = game.moves({
@@ -313,6 +350,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
         showPromotionDialog={showPromotionDialog}
         arePiecesDraggable={!isDone}
         width="100%"
+        boardOrientation={boardOrientation}
       />
       <Flex
         justify={{ sm: 'center' }}
@@ -320,7 +358,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
         <Button
           fullWidth
           variant="default"
-          disabled={success === undefined || game.history().length === 0}
+          disabled={game.history().length === 0}
           onClick={() => safeGameMutate((game) => {
             game.undo();
             setRightClickedSquares({});
@@ -331,7 +369,7 @@ export default function PuzzleBoard({ fen, moves, setSuccess, goNext, success, g
         <Button
           fullWidth
           variant="default"
-          disabled={success === undefined || isDone}
+          disabled={isDone || (success === undefined && game.history().length === moveCount)}
           onClick={nextMove}
         >
           <IconArrowBigRightLine/>

@@ -7,21 +7,28 @@ export const mergeUsers = async ({ user, session, db }) => {
   const userId = user._id.toString()
   const puzzlesCollection = db.collection('puzzles');
   const accountsCollection = db.collection('accounts');
-  const sessionPuzzles = await puzzlesCollection.find({[`solved.${session.id}`]: { $exists: true }}).toArray()
 
-  await Promise.all(sessionPuzzles.map(p => {
-    return p.solved[userId] !== true && p.solved[userId] !== false
-      ? puzzlesCollection.updateOne(
-        { _id: p._id },
-        { $set: { [`solved.${userId}`]: p.solved[session.id] } }
-      ) : Promise.resolve()
-  }))
-  await puzzlesCollection.updateMany(
-    {[`solved.${session.id}`]: { $exists: true }},
-    { $unset : { [`solved.${session.id}`] : 1} }
-  )
-  // todo fix this!!! check if account name!!
-  await accountsCollection.deleteOne( { "_id" : ObjectId.createFromHexString(session.id) } );
+  if (session.id) {
+    const sessionPuzzles = await puzzlesCollection.find({[`solved.${session.id}`]: { $exists: true }}).toArray()
+
+    await Promise.all(sessionPuzzles.map(p => {
+      return p.solved[userId] !== true && p.solved[userId] !== false
+        ? puzzlesCollection.updateOne(
+          { _id: p._id },
+          { $set: { [`solved.${userId}`]: p.solved[session.id] } }
+        ) : Promise.resolve()
+    }))
+    await puzzlesCollection.updateMany(
+      {[`solved.${session.id}`]: { $exists: true }},
+      { $unset : { [`solved.${session.id}`] : 1} }
+    )
+    const sessionUser = await accountsCollection.findOne({ "_id" : ObjectId.createFromHexString(session.id) })
+    // make sure to not accidentally delete an existing user
+    if (sessionUser && !sessionUser.name) {
+      await accountsCollection.deleteOne( { "_id" : ObjectId.createFromHexString(session.id) } );
+    }
+  }
+
   session.id = user._id.toString()
   await session.save()
 }
@@ -82,7 +89,7 @@ export default async function handler(req, res) {
         const user = await accountsCollection.findOne({ name: username })
 
         if (user && user.password === passHash) {
-          await mergeUsers({ user, session })
+          await mergeUsers({ db, user, session })
         } else {
           error = {
             status: 401,
