@@ -14,7 +14,7 @@
 //     console.log('done loading')
 //     const useRecords = records
 //       .sort((a, b) => parseInt(b.Popularity) - parseInt(a.Popularity))
-//       .slice(0,500000)
+//       .slice(0,800000)
 //     const batchSize = 1000;
 //     let currentIndex = 0;
 //     try {
