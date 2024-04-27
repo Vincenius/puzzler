@@ -1,5 +1,4 @@
 import { MongoClient, ObjectId } from 'mongodb';
-import { getIronSession } from 'iron-session';
 import { getFirstDayOfMonth, getLastDayOfMonth, formatISODate } from '@/utils/dateHelper'
 
 export default async function handler(req, res) {

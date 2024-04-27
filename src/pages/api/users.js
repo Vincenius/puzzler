@@ -73,11 +73,11 @@ export default async function handler(req, res) {
       let error
       if (type === 'CREATE') {
         if (password !== passwordRepeat) {
-          error = { status: 400, message: 'Passwörter sind nicht gleich!' }
+          error = { status: 400, message: 'Passwords do not match!' }
         } else {
           const result = await accountsCollection.findOne({ name: username })
           if (result && result._id) {
-            error = { status: 409, message: 'Username existiert bereits!' }
+            error = { status: 409, message: 'Username already exists!' }
           } else {
             const passHash = CryptoJS.SHA256(password, process.env.PASSWORD_HASH_SECRET).toString(
               CryptoJS.enc.Hex
@@ -99,7 +99,7 @@ export default async function handler(req, res) {
         } else {
           error = {
             status: 401,
-            message: 'Falsches Passwort!'
+            message: 'Wrong password!'
           }
         }
       }

@@ -37,13 +37,26 @@ const Layout = ({ children }) => {
     }
   }, [isLoading, puzzles, user, isInit, puzzleIndex, setPuzzleIndex, setResults])
 
+  const title = "Puzzler"
+  const description = "Improve your chess skills & challenge your friends with five daily puzzles."
+  const image = "https://puzzler.fun/social.png"
+
   return <>
     <Head>
-      <title>Puzzler Fun</title>
-      <meta name="description" content="A chess puzzle contest for you and your friends" />
+      <title>{title}</title>
+      <meta name="description" content={description} />
+      <meta name="keywords" content="Chess, puzzles, improve, challenge, compete, daily, lichess, chess.com" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <link rel="icon" href="/favicon.ico" />
-      {/* todo social stuff and icon */}
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:image" content={image} />
+      <meta property="og:url" content="https://puzzler.fun" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={image} />
+
     </Head>
     <Box pb={{ base: 120, sm: 70 }} pos="relative" mih="100vh">
       <main>
