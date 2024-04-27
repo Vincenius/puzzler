@@ -69,37 +69,40 @@ export default async function handler(req, res) {
         type: result.type,
       });
     } else if (req.method === 'POST') {
-      const { type, username, password, passwordRepeat } = JSON.parse(req.body)
+      const { type, username, email, password, passwordRepeat } = JSON.parse(req.body)
       let error
       if (type === 'CREATE') {
         if (password !== passwordRepeat) {
           error = { status: 400, message: 'Passwords do not match!' }
         } else {
-          const result = await accountsCollection.findOne({ name: username })
-          if (result && result._id) {
+          const [usernameResult, emailResult] = await Promise.all([
+            accountsCollection.findOne({ name: username }),
+            accountsCollection.findOne({ email: email })
+          ])
+          if (usernameResult && usernameResult._id) {
             error = { status: 409, message: 'Username already exists!' }
+          } else if (emailResult && emailResult._id) {
+            error = { status: 409, message: 'Email already exists!' }
           } else {
             const passHash = CryptoJS.SHA256(password, process.env.PASSWORD_HASH_SECRET).toString(
               CryptoJS.enc.Hex
             )
             await accountsCollection.updateOne(
               { _id: ObjectId.createFromHexString(session.id) },
-              { $set: { name: username, password: passHash } }
+              { $set: { name: username, password: passHash, email } }
             )
           }
         }
-      } else {
-        const passHash = CryptoJS.SHA256(password, process.env.PASSWORD_HASH_SECRET).toString(
-          CryptoJS.enc.Hex
-        )
-        const user = await accountsCollection.findOne({ name: username })
+      } else { // Login
+        const passHash = CryptoJS.SHA256(password, process.env.PASSWORD_HASH_SECRET).toString(CryptoJS.enc.Hex)
+        const user = await accountsCollection.findOne({ email })
 
         if (user && user.password === passHash) {
           await mergeUsers({ db, user, session })
         } else {
           error = {
             status: 401,
-            message: 'Wrong password!'
+            message: 'Wrong credentials!'
           }
         }
       }

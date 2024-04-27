@@ -33,12 +33,13 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
     e.preventDefault();
     setUserLoading(true);
     const username = e.target.elements.username.value;
+    const email = e.target.elements.email.value;
     const password = e.target.elements.password.value;
     const passwordRepeat = e.target.elements.passwordRepeat.value;
 
     fetch('/api/users', {
       method: 'POST',
-      body: JSON.stringify({ type: "CREATE", username, password, passwordRepeat })
+      body: JSON.stringify({ type: "CREATE", username, email, password, passwordRepeat })
     }).then(res => res.json())
     .then(res => {
       if (!res.error) {
@@ -58,12 +59,12 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
   const handleLogin = e => {
     e.preventDefault();
     setUserLoading(true);
-    const username = e.target.elements.username.value;
+    const email = e.target.elements.email.value;
     const password = e.target.elements.password.value;
 
     fetch('/api/users', {
       method: 'POST',
-      body: JSON.stringify({ type: "LOGIN", username, password })
+      body: JSON.stringify({ type: "LOGIN", email, password })
     }).then(res => res.json())
     .then(res => {
       if (!res.error) {
@@ -159,7 +160,7 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
 
           <Divider my="xs" label="or" labelPosition="center" />
           <form onSubmit={handleLogin}>
-            <TextInput name="username" label="Username" mb="sm" required />
+            <TextInput name="email" label="Email" mb="sm" required />
             <PasswordInput name="password" label="Passwort" mb="sm" required />
             { error && <Text c="red" mb="sm">{error}</Text> }
             <Button type="submit" loading={userLoading} disabled={userLoading}>Login</Button>
@@ -168,6 +169,7 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
 
         <Tabs.Panel value="register">
           <form onSubmit={handleRegister}>
+            <TextInput name="email" label="Email" mb="sm" required type="email" />
             <TextInput name="username" label="Username" mb="sm" required />
             <PasswordInput name="password" label="Passwort" mb="sm" required />
             <PasswordInput name="passwordRepeat" label="Passwort wiederholen" mb="sm" required />
