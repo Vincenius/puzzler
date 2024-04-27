@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (req.headers.get('Authorization') === `Bearer ${process.env.CRON_SECRET}`) {
     const today = new Date();
 
-    if (today.getDate() === 14) { // todo change to 1
+    if (today.getDate() === 1) { // todo change to 1
       today.setMonth(today.getMonth() - 1);
       const from = formatISODate(getFirstDayOfMonth(today.toISOString()))
       const to = formatISODate(getLastDayOfMonth(today.toISOString()))

@@ -30,7 +30,6 @@ const InfoModal = () => {
     }
   }, [user, open, isInit, mutate])
 
-  // todo https://next-intl-docs.vercel.app/docs/getting-started/pages-router
   return (
     <Modal opened={opened} onClose={close} title="Trophäe erhalten">
       <Box ref={confettiDom}>

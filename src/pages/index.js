@@ -83,6 +83,8 @@ export default function Home() {
     .filter(u => !search || u.name.toLowerCase().includes(search.toLowerCase()))
 
   const leaderboardPages = chunkArray(sortedLeaderboard, LEADERBOARDS_COUNT);
+  const tablePage = search ? 0 : leaderboardPage-1
+  const leaderboardTable = (!isTableLoading && leaderboard && leaderboardPage > 0 && (leaderboardPages[tablePage] || [])) || []
 
   useEffect(() => {
     if (leaderboardPage === 0 && leaderboardPages.length > 0) {
@@ -257,7 +259,7 @@ export default function Home() {
               </Tabs.List>
             </Tabs>
 
-            <Flex justify="center">
+            <Flex>
               { activeTab !== 'allTime' && <ActionIcon variant="light" aria-label="go time back" onClick={() => navigateLeaderboards('prev')}>
                 <IconArrowBigLeftLine style={{ width: '70%', height: '70%' }} stroke={1.5} />
               </ActionIcon> }
@@ -299,7 +301,7 @@ export default function Home() {
                     <Table.Tr></Table.Tr>
                     <Table.Tr></Table.Tr>
                   </> }
-                  { !isTableLoading && leaderboard && leaderboardPage > 0 && (leaderboardPages[leaderboardPage-1] || []).map((u, index) => {
+                  { leaderboardTable.map((u, index) => {
                     return <Table.Tr key={u.id}>
                       <Table.Td>{u.rank}.</Table.Td>
                       <Table.Td>
@@ -371,7 +373,7 @@ export default function Home() {
                 </Table.Tbody>
               </Table>
 
-              { leaderboardPages.length > 1 && leaderboardPage > 0 &&
+              { leaderboardPages.length > 1 && leaderboardPage > 0 && !search &&
                 <Pagination total={leaderboardPages.length} value={leaderboardPage} onChange={setLeaderboardPage} mt="sm" />
               }
             </Box>

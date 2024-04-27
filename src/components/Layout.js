@@ -45,7 +45,7 @@ const Layout = ({ children }) => {
       <link rel="icon" href="/favicon.ico" />
       {/* todo social stuff and icon */}
     </Head>
-    <Box pb={70} pos="relative" mih="100vh">
+    <Box pb={{ base: 120, sm: 70 }} pos="relative" mih="100vh">
       <main>
         <Card w="100%" withBorder shadow="sm" p="xs">
           <Box maw={960} m="0 auto" w="100%" px={{ base: 'xs', sm: 'md' }}>
