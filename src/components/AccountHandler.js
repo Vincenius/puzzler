@@ -12,6 +12,7 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
   const puzzles = puzzleData && puzzleData.sort((a,b) => parseInt(a.Rating) - parseInt(b.Rating))
   const loginModalOpen = useLoginModalOpen(state => state.isOpen)
   const setLoginModalOpen = useLoginModalOpen(state => state.setIsOpen)
+  const { mutate: mutateUser } = useSWR('/api/users', fetcher)
   const [friendFilter, setFriendFilter] = useLocalStorage({
     key: 'friend-filter',
     defaultValue: false,
@@ -90,14 +91,16 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
     }).finally(() => setUserLoading(false))
   }
 
-  const logout = () => {
-    fetch('/api/logout').then(() => {
-      mutate('/api/users')
-      refetchLeaderboards()
-      setResults([])
-      setPuzzleIndex(0)
-      setFriendFilter(false)
-    })
+  const logout = async () => {
+    mutateUser(
+      await fetch('/api/logout').then(() => {
+        refetchLeaderboards()
+        setResults([])
+        setPuzzleIndex(0)
+        setFriendFilter(false)
+      }),
+      false,
+    );
   }
 
   return <>
