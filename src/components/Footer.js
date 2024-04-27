@@ -11,7 +11,7 @@ const Footer = () => {
 
           <Flex gap="md">
             <Link href="https://github.com/Vincenius/puzzler">GitHub</Link>
-            {/* <Link href="/privacy">Privacy</Link> */}
+            <Link href="/privacy">Privacy</Link>
           </Flex>
         </Flex>
       </Box>

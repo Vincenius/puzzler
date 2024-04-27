@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import useSWR, { useSWRConfig }  from 'swr'
 import { Text, Tabs, NavLink, Modal, TextInput, PasswordInput, Button, Menu, Image, Divider } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
 import { fetcher } from "@/utils/fetcher";
 import { useLoginModalOpen } from '@/stores/useLoginModalOpen'
 import Link from 'next/link';
@@ -11,6 +12,10 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
   const puzzles = puzzleData && puzzleData.sort((a,b) => parseInt(a.Rating) - parseInt(b.Rating))
   const loginModalOpen = useLoginModalOpen(state => state.isOpen)
   const setLoginModalOpen = useLoginModalOpen(state => state.setIsOpen)
+  const [friendFilter, setFriendFilter] = useLocalStorage({
+    key: 'friend-filter',
+    defaultValue: false,
+  });
 
   const [error, setError] = useState('')
   const [userLoading, setUserLoading] = useState(false);
@@ -90,6 +95,7 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
       refetchLeaderboards()
       setResults([])
       setPuzzleIndex(0)
+      setFriendFilter(false)
     })
   }
 
@@ -137,6 +143,20 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
           >
             Login with Lichess
           </Button>
+
+          <Button
+            fullWidth my="md" variant="filled" color="#48772F"
+            component="a"
+            href="/api/chesscom/oauth"
+            onClick={e =>{
+              e.preventDefault();
+              setLoginModalOpen(false)
+              window.location = "/api/chesscom/oauth"
+            }}
+          >
+            Login with Chess.com
+          </Button>
+
           <Divider my="xs" label="or" labelPosition="center" />
           <form onSubmit={handleLogin}>
             <TextInput name="username" label="Username" mb="sm" required />

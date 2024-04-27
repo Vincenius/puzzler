@@ -3,15 +3,19 @@ import PuzzleBoard from "@/components/Chessboard";
 import Layout from "@/components/Layout";
 import { notifications } from '@mantine/notifications';
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from 'next/router';
 import { useState, useEffect } from "react";
-import { Flex, Badge, Box, LoadingOverlay, Card, Text, Tabs, Table, ActionIcon, Popover } from '@mantine/core';
+import { Flex, Badge, Box, LoadingOverlay, Card, Text, Tabs, Table, ActionIcon, Popover, Pagination, Button, Tooltip, TextInput } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
 import { formatDate, getBeginningOfWeek, getEndOfWeek, getMonthDate, getDayAfter, formatISODate, getDayBefore, getFirstDayOfMonth, getLastDayOfMonth } from "@/utils/dateHelper";
 import { fetcher } from "@/utils/fetcher";
-import { IconArrowBigLeftLine, IconArrowBigRightLine } from '@tabler/icons-react'
+import { IconArrowBigLeftLine, IconArrowBigRightLine, IconFriends, IconSearch } from '@tabler/icons-react'
 import { usePuzzleIndexStore } from '@/stores/usePuzzleIndexStore'
 import { useResultsStore } from '@/stores/useResultsStore'
 import { useLoginModalOpen } from '@/stores/useLoginModalOpen'
+
+const LEADERBOARDS_COUNT = 10 // pagination
 
 function transformURL(url) {
   var match = url.match(/\#Some\((\d+)\)/);
@@ -21,6 +25,14 @@ function transformURL(url) {
   }
 
   return url;
+}
+
+function chunkArray(array, chunkSize) {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+      chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
 }
 
 export default function Home() {
@@ -35,9 +47,18 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('day');
   const [leaderboardsFrom, setLeaderboardsFrom] = useState(formatISODate(new Date()))
   const [leaderboardsTo, setLeaderboardsTo] = useState(formatISODate(new Date()))
-  const queryString = activeTab === 'allTime' ? '' : `?from=${leaderboardsFrom}&to=${leaderboardsTo}${activeTab === 'day' ? '&details=true' : ''}`
+  const [leaderboardPage, setLeaderboardPage] = useState(0)
+  const [isFriendLoading, setIsFriendLoading] = useState(false)
+  const [friendFilter, setFriendFilter] = useLocalStorage({
+    key: 'friend-filter',
+    defaultValue: false,
+  });
+  const [search, setSearch] = useState()
+  const dateQueryString = activeTab === 'allTime' ? '' : `?from=${leaderboardsFrom}&to=${leaderboardsTo}${activeTab === 'day' ? '&details=true' : ''}`
+  const filterQueryString = friendFilter ? dateQueryString === '' ? '?filter=friends' : '&filter=friends' : ''
+  const queryString = `${dateQueryString}${filterQueryString}`
   const { data: puzzles, isLoading: isPuzzleLoading } = useSWR('/api/puzzles', fetcher)
-  const { data: user, isLoading: isUserLoading } = useSWR('/api/users', fetcher)
+  const { data: user, isLoading: isUserLoading, mutate: mutateUser } = useSWR('/api/users', fetcher)
   const { data: { leaderboard, details } = {}, isLoading: isTableLoading } = useSWR(`/api/leaderboards${queryString}`, fetcher)
   const isLoading = isPuzzleLoading || isUserLoading
   const nextDisabled = formatISODate(new Date()) === leaderboardsTo || new Date(leaderboardsTo) > new Date()
@@ -45,6 +66,34 @@ export default function Home() {
   const fen = isLoading ? "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" : puzzles[puzzleIndex].FEN
   const moves = isLoading ? "" : puzzles[puzzleIndex].Moves
   const gameUrl = isLoading ? "" : transformURL(puzzles[puzzleIndex].GameUrl)
+
+  let prevPoints = null;
+  let rank = 0;
+  const sortedLeaderboard = (leaderboard || [])
+    .filter(u => u.name || u.isPlayer) // filter anonymous
+    .sort((a, b) => b.solved - a.solved)
+    .map((u, index) => {
+      if (u.solved !== prevPoints) {
+        rank = index + 1;
+      }
+      prevPoints = u.solved; // Update previous points for the next iteration
+
+      return { ...u, rank }
+    })
+    .filter(u => !search || u.name.toLowerCase().includes(search.toLowerCase()))
+
+  const leaderboardPages = chunkArray(sortedLeaderboard, LEADERBOARDS_COUNT);
+
+  useEffect(() => {
+    if (leaderboardPage === 0 && leaderboardPages.length > 0) {
+      if (user) {
+        const index = leaderboardPages.findIndex(page => page.find(u => u.isPlayer))
+        setLeaderboardPage(index === -1 ? 1 : index + 1)
+      } else {
+        setLeaderboardPage(0)
+      }
+    }
+  }, [leaderboardPage, leaderboardPages, user])
 
   useEffect(() => {
     const { success } = router.query;
@@ -74,11 +123,38 @@ export default function Home() {
   });
 
   const refetchLeaderboards = () => {
+    setLeaderboardPage(0)
     mutate(
       key => typeof key === 'string' && key.startsWith('/api/leaderboards'),
       undefined,
       { revalidate: true }
     )
+  }
+
+  const updateFriend = (e, id) => {
+    const existingFriends = user.friends || []
+    const type = existingFriends.includes(id) ? "REMOVE" : "ADD"
+    e.preventDefault()
+    setIsFriendLoading(true)
+    fetch('/api/friends', {
+      method: 'POST',
+      body: JSON.stringify({ type, id })
+    }).then(async () => {
+      if (type === 'ADD') {
+        mutateUser({ ...user, friends: [...existingFriends, id] })
+      } else {
+        mutateUser({ ...user, friends: existingFriends.filter(fId => fId !== id) })
+      }
+
+      notifications.show({
+        title: 'Success',
+        message: type === 'ADD' ? 'Successfully added friend.' : 'Successfully removed friend.',
+        autoClose: 3000,
+        color: 'green',
+      })
+    }).finally(() => {
+      setIsFriendLoading(false)
+    })
   }
 
   const setSuccess = (success) => {
@@ -143,9 +219,6 @@ export default function Home() {
     setLeaderboardsTo(formatISODate(newTo))
   }
 
-  let prevPoints = null;
-  let rank = 0;
-
   return (
     <Layout>
       <Flex justify="space-between" gap="md" direction={{ base: "column", sm: "row"}} >
@@ -184,7 +257,7 @@ export default function Home() {
               </Tabs.List>
             </Tabs>
 
-            <Flex>
+            <Flex justify="center">
               { activeTab !== 'allTime' && <ActionIcon variant="light" aria-label="go time back" onClick={() => navigateLeaderboards('prev')}>
                 <IconArrowBigLeftLine style={{ width: '70%', height: '70%' }} stroke={1.5} />
               </ActionIcon> }
@@ -194,12 +267,28 @@ export default function Home() {
               </ActionIcon> }
             </Flex>
 
+            <Flex mb="xs" gap="sm">
+              {/* filled if active */}
+              { user && user.name && <Tooltip label="Filter for friends">
+                <Button leftSection={<IconFriends size={14} />} variant={friendFilter ? "filled" : "outline"} onClick={() => setFriendFilter(!friendFilter)} size="xs">
+                  Friends
+                </Button>
+              </Tooltip> }
+              <TextInput
+                leftSection={<IconSearch style={{ width: 16, height: 16 }} />}
+                size="xs"
+                placeholder="Search"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </Flex>
+
             <Box pos="relative">
               <LoadingOverlay visible={isTableLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
               <Table>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th></Table.Th>
+                    <Table.Th>Place</Table.Th>
                     <Table.Th>Player</Table.Th>
                     <Table.Th>Points</Table.Th>
                   </Table.Tr>
@@ -210,29 +299,31 @@ export default function Home() {
                     <Table.Tr></Table.Tr>
                     <Table.Tr></Table.Tr>
                   </> }
-                  { !isTableLoading && leaderboard && leaderboard.sort((a, b) => b.solved - a.solved).map((u, index) => {
-                    if (u.solved !== prevPoints) {
-                      rank = index + 1;
-                    }
-                    prevPoints = u.solved; // Update previous points for the next iteration
-
+                  { !isTableLoading && leaderboard && leaderboardPage > 0 && (leaderboardPages[leaderboardPage-1] || []).map((u, index) => {
                     return <Table.Tr key={u.id}>
-                    { u.name && <>
-                      <Table.Td>{rank}.</Table.Td>
+                      <Table.Td>{u.rank}.</Table.Td>
                       <Table.Td>
-                        { user && user.id === u.id && <Flex gap="xs">
-                          <Text c="green" fw={600}>
-                            {u.name || 'You'}
-                          </Text>
+                        { u.isPlayer && <Flex gap="xs">
+                          <Flex gap="xs" align="center">
+                            <Text c="green" fw={600}>
+                              {u.name || 'You'}
+                            </Text>
+                            {u.type === 'LICHESS' && <Image width={16} height={16} src="/lichess.svg" alt="lichess logo"/>}
+                            {u.type === 'CHESSCOM' && <Image width={16} height={16} src="/chesscom.svg" alt="chess.com logo"/>}
+                          </Flex>
                           { !u.name && <Text><a href="#" onClick={e => {
                             e.preventDefault()
                             setLoginModalOpen(true)
                           }}>(Sign-up | Login)</a></Text> }
                         </Flex>}
-                        { (user && user.id !== u.id && u.name) && <>
+                        { (u.name && !u.isPlayer) && <>
                           <Popover width={200} withArrow shadow="md" arrowPosition="side">
                             <Popover.Target>
-                              <Text c="blue" style={{ cursor: 'pointer' }}>{u.name}</Text>
+                              <Flex gap="xs" align="center">
+                                <Text c="blue" style={{ cursor: 'pointer' }}>{u.name}</Text>
+                                {u.type === 'LICHESS' && <Image width={16} height={16} src="/lichess.svg" alt="lichess logo"/>}
+                                {u.type === 'CHESSCOM' && <Image width={16} height={16} src="/chesscom.svg" alt="chess.com logo"/>}
+                              </Flex>
                             </Popover.Target>
                             <Popover.Dropdown>
                               { details && details.length &&
@@ -255,35 +346,34 @@ export default function Home() {
                                   }
                                 </Flex>
                               }
-                              <Text align="center">
-                                <Link href={`/u/${u.name}`}>Visit Profile</Link>
-                              </Text>
+                              <Box>
+                                <Button variant="outline" href={`/u/${u.name}`} component={Link} fullWidth mb="sm">
+                                  Visit Profile
+                                </Button>
+                                { user && user.id && user.name && u.id !== user.id &&
+                                  <Button
+                                    variant="outline"
+                                    onClick={e => updateFriend(e, u.id)}
+                                    fullWidth
+                                    loading={isFriendLoading}
+                                    color={(user.friends || []).includes(u.id) ? 'red' : undefined}
+                                  >
+                                    { (user.friends || []).includes(u.id) ? 'Remove friend' : 'Add as friend' }
+                                  </Button>
+                                }
+                              </Box>
                             </Popover.Dropdown>
                           </Popover>
                         </> }
                       </Table.Td>
                       <Table.Td>{u.solved}</Table.Td>
-                    </> }
-
-                    {!u.name && <>
-                      <Table.Td>{rank}.</Table.Td>
-                      <Table.Td>
-                        { user && user.id === u.id && <Flex gap="xs">
-                          <Text c="green" fw={600}>
-                            {u.name || 'Anonym'}
-                          </Text>
-                        </Flex> }
-                        { !user || user.id !== u.id && <Flex gap="xs">
-                          <Text>
-                            {u.name || 'Anonym'}
-                          </Text>
-                        </Flex>}
-                      </Table.Td>
-                      <Table.Td>{u.solved}</Table.Td>
-                    </> }
                   </Table.Tr> } )}
                 </Table.Tbody>
               </Table>
+
+              { leaderboardPages.length > 1 && leaderboardPage > 0 &&
+                <Pagination total={leaderboardPages.length} value={leaderboardPage} onChange={setLeaderboardPage} mt="sm" />
+              }
             </Box>
           </Card>
         </Box>

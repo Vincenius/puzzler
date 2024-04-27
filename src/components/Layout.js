@@ -39,7 +39,7 @@ const Layout = ({ children }) => {
 
   return <>
     <Head>
-      <title>Happy Sunday Puzzler</title>
+      <title>Puzzler Fun</title>
       <meta name="description" content="A chess puzzle contest for you and your friends" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <link rel="icon" href="/favicon.ico" />
@@ -86,6 +86,7 @@ const Layout = ({ children }) => {
           {children}
         </Box>
       </main>
+
       <Footer />
 
       <TrophyInfoModal />

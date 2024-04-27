@@ -61,7 +61,13 @@ export default async function handler(req, res) {
         await session.save()
       }
 
-      res.status(200).json(result);
+      res.status(200).json({
+        id: result.id,
+        createdAt: result.createdAt,
+        name: result.name,
+        friends: result.friends,
+        type: result.type,
+      });
     } else if (req.method === 'POST') {
       const { type, username, password, passwordRepeat } = JSON.parse(req.body)
       let error
