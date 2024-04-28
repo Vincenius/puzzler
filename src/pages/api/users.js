@@ -46,14 +46,12 @@ export default async function handler(req, res) {
       let result = {}
 
       if (session.id) {
-        console.log('dbg get id', session.id)
         const { _id, ...user } = await accountsCollection.findOne({ _id: ObjectId.createFromHexString(session.id) })
         result = {
           id: _id,
           ...user,
         }
       } else {
-        console.log('dbg get no id')
         const newUser = await accountsCollection.insertOne({
           createdAt: new Date().toISOString(),
         })

@@ -5,7 +5,5 @@ export default async function handler(req, res) {
   session.destroy()
   await session.save()
 
-  console.log('dbg log out', session)
-
   res.status(200).json({});
 }
