@@ -1,8 +1,7 @@
 import { getIronSession } from 'iron-session';
 
 export default async function handler(req, res) {
-  let session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.SESSION_KEY, ttl: 0 });
-  session = {}
+  const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.SESSION_KEY, ttl: 0 });
   session.destroy()
   await session.save()
 

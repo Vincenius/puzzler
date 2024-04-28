@@ -93,7 +93,7 @@ const AccountHandler = ({ user, setResults, setPuzzleIndex }) => {
 
   const logout = async () => {
     mutateUser(
-      await fetch('/api/logout').then(() => {
+      await fetch('/api/logout', { method: 'POST' }).then(() => {
         refetchLeaderboards()
         setResults([])
         setPuzzleIndex(0)
