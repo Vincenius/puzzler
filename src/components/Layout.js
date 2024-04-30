@@ -74,19 +74,19 @@ const Layout = ({ children }) => {
                     <Box display={{ base: 'inline', sm: 'none' }}>&nbsp;</Box>
                   </ResultChip>
                   <ResultChip result={results[1]} active={puzzleIndex === 1} index={1} results={results}>
-                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 1500</Box>
+                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 1400</Box>
                     <Box display={{ base: 'inline', sm: 'none' }}>&nbsp;</Box>
                   </ResultChip>
                   <ResultChip result={results[2]} active={puzzleIndex === 2} index={2} results={results}>
-                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 1800</Box>
+                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 1600</Box>
                     <Box display={{ base: 'inline', sm: 'none' }}>&nbsp;</Box>
                   </ResultChip>
                   <ResultChip result={results[3]} active={puzzleIndex === 3} index={3} results={results}>
-                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 2100</Box>
+                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 1800</Box>
                     <Box display={{ base: 'inline', sm: 'none' }}>&nbsp;</Box>
                   </ResultChip>
                   <ResultChip result={results[4]} active={puzzleIndex === 4} index={4} results={results}>
-                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 2400</Box>
+                    <Box display={{ base: 'none', sm: 'inline' }}>&gt; 2000</Box>
                     <Box display={{ base: 'inline', sm: 'none' }}>&nbsp;</Box>
                   </ResultChip>
                 </Flex>
