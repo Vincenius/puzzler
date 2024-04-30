@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       const puzzles = await puzzlesCollection.find({ date: today }).toArray()
 
       if (puzzles.length === 0) { // generate puzzles for today if not done already
-        const ratings = [[1200,1400, 5000],[1400,1600, 4000],[1600,1800, 3000],[1800,2000, 2000],[2000,2200, 1000]]
+        const ratings = [[1200,1500, 5000],[1500,1800, 4000],[1800,2100, 2000],[2100,2400, 0],[2400,3000, 0]]
         const newPuzzles = await Promise.all(
           ratings.map((arr) => puzzlesCollection.aggregate(getPipeline(arr[0], arr[1], arr[2])).toArray())
         )

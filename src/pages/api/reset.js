@@ -14,7 +14,7 @@
 
 //     await puzzlesCollection.updateMany(
 //       { date: { $exists: true } },
-//       { $set: { solved: {} } }
+//       { $set: { solved: {}, date: undefined } }
 //     );
 //   } catch (error) {
 //     console.error('Error resetting puzzles:', error);
