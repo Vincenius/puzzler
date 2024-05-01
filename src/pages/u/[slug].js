@@ -59,10 +59,10 @@ export default function Page() {
           <Table.Td>
             <Flex gap={{ base: 'xs' }} wrap="wrap" mr="md">
               <ResultChip result={rowPuzzles[0]?.solved[userId]} active={false}>&gt; 1200</ResultChip>
-              <ResultChip result={rowPuzzles[1]?.solved[userId]} active={false}>&gt; 1400</ResultChip>
-              <ResultChip result={rowPuzzles[2]?.solved[userId]} active={false}>&gt; 1600</ResultChip>
-              <ResultChip result={rowPuzzles[3]?.solved[userId]} active={false}>&gt; 1800</ResultChip>
-              <ResultChip result={rowPuzzles[4]?.solved[userId]} active={false}>&gt; 2000</ResultChip>
+              <ResultChip result={rowPuzzles[1]?.solved[userId]} active={false}>&gt; 1500</ResultChip>
+              <ResultChip result={rowPuzzles[2]?.solved[userId]} active={false}>&gt; 1800</ResultChip>
+              <ResultChip result={rowPuzzles[3]?.solved[userId]} active={false}>&gt; 2100</ResultChip>
+              <ResultChip result={rowPuzzles[4]?.solved[userId]} active={false}>&gt; 2400</ResultChip>
             </Flex>
           </Table.Td>
         </Table.Tr>
