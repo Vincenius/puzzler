@@ -1,16 +1,20 @@
 import { MongoClient, ObjectId } from 'mongodb';
 import { getIronSession } from 'iron-session';
-import { getFirstDayOfMonth, getLastDayOfMonth, formatISODate } from '@/utils/dateHelper'
+import { getFirstDayOfMonth, getLastDayOfMonth, formatISODate, getMonthDate } from '@/utils/dateHelper'
 
 export default async function handler(req, res) {
 
-  if (req.headers.get('Authorization') === `Bearer ${process.env.CRON_SECRET}`) {
+  console.log('DBG CRON', req.headers)
+  const auth = req.headers['authorization'] || req.headers['Authorization']
+  if (auth === `Bearer ${process.env.CRON_SECRET}`) {
+    console.log('CRON Triggered')
     const today = new Date();
 
-    if (today.getDate() === 1) {
+    // if (today.getDate() === 1) {
       today.setMonth(today.getMonth() - 1);
       const from = formatISODate(getFirstDayOfMonth(today.toISOString()))
       const to = formatISODate(getLastDayOfMonth(today.toISOString()))
+      console.log('DBG CRON', from, to)
       const { leaderboard } = await fetch(process.env.BASE_URL + `/api/leaderboards?from=${from}&to=${to}`).then(res => res.json())
       const sortedLeaderboard = leaderboard.sort((a, b) => b.solved - a.solved).slice(0, 3);
       const leaderBoardRanks = []
@@ -27,18 +31,22 @@ export default async function handler(req, res) {
         prevPoints = sortedLeaderboard[i].solved;
       }
 
+      console.log('DBG CRON 2', leaderBoardRanks)
+
       const client = new MongoClient(process.env.MONGODB_URI);
       try {
         await client.connect();
         const db = client.db(process.env.MONGODB_DB);
         const accountsCollection = db.collection('accounts');
 
+        console.log('CRON DBG update users')
+        console.log(getMonthDate(today))
         await Promise.all(
           leaderBoardRanks.map(u => accountsCollection.updateOne(
             { _id: ObjectId.createFromHexString(u.id) },
             { $push: { trophies: {
               "category": "month",
-              "description": `${u.rank}. Platz März 2024`,
+              "description": `${u.rank}. Platz ${getMonthDate(today)} 2024`,
               "color": u.rank === 1 ? 'gold' : u.rank === 2 ? 'silver' : 'bronze',
               "new": true
             } } }
@@ -52,9 +60,9 @@ export default async function handler(req, res) {
         // Close the connection
         client.close();
       }
-    } else {
-      res.status(200).json({})
-    }
+    // } else {
+    //   res.status(200).json({})
+    // }
   } else {
     res.status(401).json({})
   }
