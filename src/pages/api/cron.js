@@ -46,7 +46,7 @@ export default async function handler(req, res) {
             { _id: ObjectId.createFromHexString(u.id) },
             { $push: { trophies: {
               "category": "month",
-              "description": `${u.rank}. Platz ${getMonthDate(today)} 2024`,
+              "description": `${u.rank}. Platz ${getMonthDate(today)}`,
               "color": u.rank === 1 ? 'gold' : u.rank === 2 ? 'silver' : 'bronze',
               "new": true
             } } }
