@@ -43,7 +43,7 @@ export default async function handler(req, res) {
       const addDetails = req.query.details === 'true'
       const puzzles = await puzzlesCollection.find(query).toArray()
       const userIds = [...new Set(puzzles.map(p => Object.keys(p.solved)).flat())]
-      const objectIds = userIds.map(id => ObjectId.createFromHexString(id))
+      const objectIds = userIds.filter(id => id !== 'undefined').map(id => ObjectId.createFromHexString(id))
       const users = await accountsCollection.find({ _id: { $in: objectIds } }).toArray();
       const session = await getIronSession(req, res, { password: process.env.SESSION_PASSWORD, cookieName: process.env.SESSION_KEY });
       result = {
