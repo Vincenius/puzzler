@@ -1,4 +1,5 @@
 require('dotenv').config()
+const cron = require('node-cron');
 
 const runCronJob = async () => {
   console.log('running cron job', new Date().toISOString())
@@ -7,4 +8,11 @@ const runCronJob = async () => {
   console.log('cron job done', res)
 }
 
-runCronJob() // 0 4 1 * * -> at 4am on the 1st of every month
+console.log('init cron job')
+cron.schedule('0 4 1 * *', () => { // at 4am on the 1st of every month
+  runCronJob()
+});
+
+
+
+

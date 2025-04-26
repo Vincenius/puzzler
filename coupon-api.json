@@ -1,0 +1,12 @@
+{
+  "apps": [
+      {
+          "name": "puzzler-cron",
+          "script": "npm",
+          "args": "run cron",
+          "env": {
+              "NODE_ENV": "production"
+          }
+      }
+  ]
+}
