@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "cron": "node cron.js",
     "lint": "next lint",
     "generatePwaAssets": "pwa-asset-generator ./public/icons/logo.png ./public/icons -m ./public/manifest.json"
   },
@@ -17,6 +18,7 @@
     "chess.js": "^0.13.1",
     "crypto": "^1.0.1",
     "crypto-js": "^4.2.0",
+    "dotenv": "^16.5.0",
     "iron-session": "^8.0.1",
     "mongodb": "^6.3.0",
     "next": "14.1.0",
