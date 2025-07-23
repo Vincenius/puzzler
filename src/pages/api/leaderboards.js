@@ -8,28 +8,42 @@ const getQuery = ({ from, to }) => {
     const start = new Date(from);
     const dayBefore = new Date(start.getTime() - 24 * 60 * 60 * 1000)
 
-    query.push({ date: {
-      $gt: dayBefore.toISOString()
-    } })
+    query.push({
+      date: {
+        $gt: dayBefore.toISOString()
+      }
+    })
   }
   if (to) {
     const end = new Date(to);
 
-    query.push({ date: {
-      $lte: end.toISOString()
-    } })
+    query.push({
+      date: {
+        $lte: end.toISOString()
+      }
+    })
   }
 
   if (!from && !to) {
-    query.push({ date: {
-      $exists: true,
-    } })
+    query.push({
+      date: {
+        $exists: true,
+      }
+    })
   }
 
   return { $and: query }
 }
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*'); 
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Content-Type, Authorization'
+  );
+
   if (req.method === 'GET') {
     const client = new MongoClient(process.env.MONGODB_URI);
     let result = {}
